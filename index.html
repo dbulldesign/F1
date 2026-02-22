@@ -1,0 +1,1567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>F1 LIVE</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════ BASE */
+:root{
+  --bg:#02040a; --surf:#080e18; --surf2:#0c1422;
+  --b1:#152030; --b2:#1e3048;
+  --red:#e8001f; --red2:#ff4500; --gold:#f5a623;
+  --cyan:#00cfff; --green:#00ff88; --purple:#c77dff;
+  --text:#dde8f5; --dim:#4a6580; --mid:#7a9ab0;
+  --gr:#rgba(232,0,31,.5);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bot: env(safe-area-inset-bottom, 0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;overflow:hidden;}
+
+/* ══════════════════════════════════════════ SHARED TOPBAR */
+#topbar{
+  position:fixed;top:0;left:0;right:0;z-index:9999;
+  background:rgba(2,4,10,.97);border-bottom:1px solid var(--b1);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  padding-top:var(--safe-top);
+}
+.tb-inner{
+  height:48px;display:flex;align-items:center;gap:8px;padding:0 12px;
+}
+.logo{font-family:'Orbitron',monospace;font-weight:900;font-size:.95rem;color:var(--red);letter-spacing:.1em;white-space:nowrap;line-height:1;text-shadow:0 0 16px rgba(232,0,31,.5);}
+.logo small{display:block;font-size:.48rem;color:var(--dim);letter-spacing:.26em;font-weight:400;margin-top:1px;}
+.sep{width:1px;height:22px;background:var(--b2);flex-shrink:0;}
+.f1{flex:1;min-width:0;}
+.ctrl-lbl{font-family:'Share Tech Mono',monospace;font-size:.58rem;color:var(--dim);letter-spacing:.12em;white-space:nowrap;}
+select.ctrl{background:var(--surf2);border:1px solid var(--b2);color:var(--text);padding:4px 7px;border-radius:3px;font-family:'Rajdhani',sans-serif;font-size:.8rem;outline:none;cursor:pointer;}
+select.ctrl option{background:#0c1422;}
+select.ctrl:focus{border-color:var(--cyan);}
+.btn{background:transparent;border:1px solid var(--b2);color:var(--mid);padding:5px 10px;border-radius:3px;font-family:'Orbitron',monospace;font-size:.56rem;letter-spacing:.1em;cursor:pointer;white-space:nowrap;transition:all .18s;}
+.btn:hover{border-color:var(--cyan);color:var(--cyan);}
+.btn.load{background:var(--red);border-color:var(--red);color:#fff;font-weight:700;}
+.btn.load:hover{background:var(--red2);box-shadow:0 0 14px rgba(232,0,31,.5);}
+.btn.add{background:rgba(0,207,255,.1);border-color:rgba(0,207,255,.4);color:var(--cyan);}
+.live-pip{display:flex;align-items:center;gap:5px;background:rgba(232,0,31,.1);border:1px solid rgba(232,0,31,.35);padding:4px 8px;border-radius:3px;font-family:'Orbitron',monospace;font-size:.56rem;letter-spacing:.1em;color:var(--red);flex-shrink:0;}
+.pip-dot{width:5px;height:5px;border-radius:50%;background:var(--red);animation:blink 1.5s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+#status-txt{font-family:'Share Tech Mono',monospace;font-size:.6rem;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;}
+#status-txt.ok{color:var(--green);}#status-txt.err{color:var(--red);}
+
+/* Desktop-only topbar items */
+.desk-only{display:none;}
+
+/* ══════════════════════════════════════════ MOBILE LAYOUT */
+/* Session bar (mobile) */
+#mob-session{
+  display:flex;flex-direction:column;gap:8px;
+  padding:10px 12px;background:var(--surf);border-bottom:1px solid var(--b1);
+}
+.mob-sess-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+
+/* Mobile tab nav */
+#mob-nav{
+  position:fixed;bottom:0;left:0;right:0;z-index:9998;
+  background:rgba(2,4,10,.97);border-top:1px solid var(--b1);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  display:flex;
+  padding-bottom:var(--safe-bot);
+  overflow-x:auto;scrollbar-width:none;
+}
+#mob-nav::-webkit-scrollbar{display:none;}
+.mob-tab{
+  flex:0 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;padding:8px 14px;cursor:pointer;
+  border-top:2px solid transparent;transition:all .18s;min-width:60px;
+}
+.mob-tab.active{border-top-color:var(--red);}
+.mob-tab-icon{font-size:1.1rem;line-height:1;}
+.mob-tab-lbl{font-family:'Orbitron',monospace;font-size:.42rem;letter-spacing:.1em;color:var(--dim);text-transform:uppercase;}
+.mob-tab.active .mob-tab-lbl{color:var(--red);}
+
+/* Mobile workspace */
+#mob-workspace{
+  position:fixed;left:0;right:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  background:var(--bg);
+}
+#mob-workspace::-webkit-scrollbar{display:none;}
+
+/* Mobile panel wrapper */
+.mob-panel{display:none;padding:10px;padding-bottom:80px;}
+.mob-panel.active{display:block;}
+
+/* Mobile card */
+.m-card{background:var(--surf);border:1px solid var(--b2);border-radius:6px;overflow:hidden;margin-bottom:10px;}
+.m-card-hdr{padding:8px 12px;border-bottom:1px solid var(--b1);background:rgba(0,0,0,.2);display:flex;align-items:center;gap:8px;}
+.m-card-title{font-family:'Orbitron',monospace;font-size:.6rem;letter-spacing:.18em;color:var(--dim);}
+.m-card-badge{margin-left:auto;font-family:'Share Tech Mono',monospace;font-size:.6rem;color:var(--cyan);}
+
+/* ══════════════════════════════════════════ DESKTOP LAYOUT */
+#desk-workspace{
+  position:fixed;left:0;right:0;bottom:0;
+  background:var(--bg);overflow:hidden;
+  background-image:
+    radial-gradient(ellipse at 20% 60%,rgba(232,0,31,.03) 0%,transparent 55%),
+    radial-gradient(ellipse at 80% 20%,rgba(0,207,255,.025) 0%,transparent 50%),
+    linear-gradient(rgba(21,32,48,.35) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(21,32,48,.35) 1px,transparent 1px);
+  background-size:100% 100%,100% 100%,40px 40px,40px 40px;
+  display:none;
+}
+
+/* Tile buttons */
+.tile-group{display:flex;gap:3px;}
+.tile-btn{background:var(--surf2);border:1px solid var(--b1);color:var(--dim);width:26px;height:26px;border-radius:3px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.75rem;transition:all .15s;}
+.tile-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+
+/* Windows */
+.win{
+  position:absolute;background:var(--surf);border:1px solid var(--b2);border-radius:6px;
+  box-shadow:0 8px 40px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.03);
+  display:flex;flex-direction:column;min-width:240px;min-height:150px;overflow:hidden;
+  transition:box-shadow .15s;
+}
+.win:hover{box-shadow:0 12px 50px rgba(0,0,0,.8),0 0 0 1px rgba(0,207,255,.07);}
+.win.focused{border-color:rgba(0,207,255,.28);box-shadow:0 16px 60px rgba(0,0,0,.9),0 0 0 1px rgba(0,207,255,.14),0 0 20px rgba(0,207,255,.05);z-index:100!important;}
+.win.minimized .win-body{display:none!important;}
+.win.minimized{min-height:0!important;}
+.win-title{height:36px;min-height:36px;display:flex;align-items:center;gap:7px;padding:0 9px 0 11px;background:rgba(0,0,0,.28);border-bottom:1px solid var(--b1);cursor:grab;user-select:none;flex-shrink:0;}
+.win-title:active{cursor:grabbing;}
+.win-icon{font-size:.85rem;flex-shrink:0;}
+.win-type-sel{background:rgba(255,255,255,.05);border:1px solid var(--b1);color:var(--text);padding:2px 5px;border-radius:3px;font-family:'Orbitron',monospace;font-size:.5rem;letter-spacing:.07em;outline:none;cursor:pointer;flex:1;min-width:0;}
+.win-type-sel option{background:#0c1422;}
+.wc{display:flex;gap:3px;flex-shrink:0;}
+.wc-btn{width:12px;height:12px;border-radius:50%;border:none;cursor:pointer;transition:filter .15s;}
+.wc-btn:hover{filter:brightness(1.5);}
+.wc-close{background:#e8001f;}.wc-min{background:#f5a623;}.wc-max{background:#00c853;}
+.win-body{flex:1;overflow:auto;position:relative;min-height:0;}
+.win-body::-webkit-scrollbar{width:3px;height:3px;}
+.win-body::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px;}
+.win-resize{position:absolute;right:0;bottom:0;width:14px;height:14px;cursor:se-resize;display:flex;align-items:flex-end;justify-content:flex-end;padding:2px;opacity:.3;}
+.win-resize:hover{opacity:.8;}
+
+/* ══════════════════════════════════════════ PANEL CONTENT (shared) */
+.scr{overflow:auto;height:100%;}
+.scr::-webkit-scrollbar{width:3px;height:3px;}
+.scr::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px;}
+.p-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:120px;gap:8px;color:var(--dim);text-align:center;padding:20px;}
+.p-empty-icon{font-size:2rem;opacity:.2;}
+.p-empty-title{font-family:'Orbitron',monospace;font-size:.65rem;letter-spacing:.14em;}
+.p-empty-sub{font-size:.8rem;max-width:220px;line-height:1.5;}
+
+/* Timing table */
+.t-tbl{width:100%;border-collapse:collapse;font-family:'Share Tech Mono',monospace;font-size:.75rem;}
+.t-tbl th{padding:6px 10px;text-align:left;color:var(--dim);font-size:.58rem;letter-spacing:.13em;border-bottom:1px solid var(--b1);background:rgba(0,0,0,.18);white-space:nowrap;}
+.t-tbl td{padding:7px 10px;border-bottom:1px solid rgba(21,32,48,.55);vertical-align:middle;}
+.t-tbl tr:hover td{background:rgba(255,255,255,.016);}
+.pos{font-family:'Orbitron',monospace;font-weight:700;font-size:.82rem;color:var(--mid);min-width:22px;display:inline-block;}
+.g1{color:var(--gold)!important;}.g2{color:#bbb!important;}.g3{color:#cd7f32!important;}
+.d-num{display:inline-block;padding:1px 5px;border-radius:3px;font-weight:700;font-size:.7rem;min-width:26px;text-align:center;}
+.d-name{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.9rem;}
+.d-abbr{font-family:'Orbitron',monospace;font-size:.6rem;font-weight:700;}
+.dim{color:var(--dim);}
+.fastest{color:var(--purple)!important;}
+.drs-on{background:rgba(0,255,136,.12);color:var(--green);border:1px solid rgba(0,255,136,.3);padding:1px 4px;border-radius:2px;font-size:.55rem;}
+.tyre{display:inline-flex;width:17px;height:17px;border-radius:50%;font-size:.48rem;align-items:center;justify-content:center;font-weight:900;flex-shrink:0;}
+.tyre-soft{background:var(--red);color:#fff;}.tyre-medium{background:var(--gold);color:#000;}
+.tyre-hard{background:#ddd;color:#000;}.tyre-inter{background:var(--green);color:#000;}
+.tyre-wet{background:var(--cyan);color:#000;}.tyre-unknown{background:var(--surf2);color:var(--dim);border:1px solid var(--b1);}
+
+/* Telemetry */
+.telem-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;padding:10px;}
+.d-card{background:var(--surf2);border:1px solid var(--b1);border-radius:5px;overflow:hidden;}
+.d-card-hdr{padding:7px 11px;display:flex;align-items:center;gap:7px;border-bottom:1px solid var(--b1);}
+.d-card-num{font-family:'Orbitron',monospace;font-weight:900;font-size:1.05rem;}
+.d-card-info{flex:1;min-width:0;}
+.d-card-name{font-weight:700;font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.d-card-team{font-size:.65rem;color:var(--dim);}
+.d-card-pos{font-family:'Orbitron',monospace;font-size:1.1rem;font-weight:900;color:var(--dim);}
+.bars{padding:9px 11px;display:flex;flex-direction:column;gap:5px;}
+.bar-row{display:flex;flex-direction:column;gap:2px;}
+.bar-lbl{display:flex;justify-content:space-between;font-size:.6rem;color:var(--dim);font-family:'Share Tech Mono',monospace;}
+.bar-val{color:var(--text);font-weight:600;}
+.bar-track{height:3px;background:var(--b1);border-radius:2px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:2px;transition:width .5s ease;}
+.bt{background:linear-gradient(90deg,var(--green),#00ff88aa);}
+.bb{background:linear-gradient(90deg,var(--red),#ff4500);}
+.bg{background:linear-gradient(90deg,var(--cyan),#00cfffaa);}
+.br{background:linear-gradient(90deg,var(--gold),var(--red2));}
+.d-stats{padding:0 11px 9px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;}
+.s-box{background:var(--surf);border:1px solid var(--b1);border-radius:3px;padding:4px 5px;text-align:center;}
+.s-val{font-family:'Orbitron',monospace;font-size:.75rem;font-weight:700;}
+.s-lbl{font-size:.5rem;color:var(--dim);letter-spacing:.07em;text-transform:uppercase;margin-top:1px;}
+
+/* Standings */
+.stand-row{display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid var(--b1);}
+.stand-row:hover{background:rgba(255,255,255,.013);}
+.pts-track{flex:1;height:2px;background:var(--b1);border-radius:2px;overflow:hidden;}
+.pts-fill{height:100%;background:linear-gradient(90deg,var(--red),var(--gold));border-radius:2px;}
+.pts-val{font-family:'Orbitron',monospace;font-size:.75rem;font-weight:700;color:var(--gold);min-width:36px;text-align:right;}
+.section-hdr{padding:7px 12px;font-family:'Orbitron',monospace;font-size:.58rem;letter-spacing:.16em;color:var(--dim);border-bottom:1px solid var(--b1);background:rgba(0,0,0,.15);}
+
+/* Weather */
+.wx-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;padding:10px;}
+.wx-box{background:var(--surf2);border:1px solid var(--b1);border-radius:5px;padding:11px;text-align:center;}
+.wx-icon{font-size:1.4rem;margin-bottom:3px;}
+.wx-lbl{font-size:.52rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;}
+.wx-val{font-family:'Orbitron',monospace;font-size:.9rem;font-weight:700;margin-top:1px;}
+
+/* Race control */
+.rc-item{padding:8px 12px;border-bottom:1px solid var(--b1);display:flex;gap:10px;}
+.rc-time{font-family:'Share Tech Mono',monospace;font-size:.58rem;color:var(--dim);white-space:nowrap;margin-top:1px;}
+.rc-msg{font-size:.78rem;line-height:1.4;}
+.rc-cat{font-size:.52rem;padding:1px 5px;border-radius:2px;letter-spacing:.07em;white-space:nowrap;}
+.rc-flag{background:rgba(245,166,35,.18);color:var(--gold);border:1px solid rgba(245,166,35,.3);}
+.rc-inc{background:rgba(232,0,31,.14);color:var(--red);border:1px solid rgba(232,0,31,.3);}
+.rc-info{background:rgba(0,207,255,.1);color:var(--cyan);border:1px solid rgba(0,207,255,.2);}
+
+/* Lap table */
+.lap-filter-bar{padding:7px 11px;border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.15);}
+.drv-sel{background:var(--surf2);border:1px solid var(--b1);color:var(--text);padding:3px 6px;border-radius:3px;font-family:'Rajdhani',sans-serif;font-size:.75rem;outline:none;}
+.drv-sel option{background:#0c1422;}
+
+/* Track canvas */
+.track-wrap{position:relative;width:100%;height:100%;background:#030710;overflow:hidden;min-height:200px;}
+.t-canvas{display:block;width:100%;height:100%;cursor:grab;}
+.t-canvas:active{cursor:grabbing;}
+.track-ctrl-btns{position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:3px;z-index:5;}
+.t-zbtn{background:rgba(8,14,24,.85);border:1px solid var(--b2);color:var(--mid);width:24px;height:24px;border-radius:3px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.82rem;transition:all .15s;}
+.t-zbtn:hover{border-color:var(--cyan);color:var(--cyan);}
+.t-legend{position:absolute;bottom:6px;left:6px;display:flex;flex-wrap:wrap;gap:4px;max-width:calc(100% - 12px);}
+.leg-item{display:flex;align-items:center;gap:3px;font-size:.58rem;color:var(--mid);font-family:'Share Tech Mono',monospace;background:rgba(2,4,10,.78);padding:2px 5px;border-radius:3px;}
+.leg-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.track-loading-ov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:rgba(3,7,16,.88);z-index:6;}
+.loader{width:26px;height:26px;border:2px solid var(--b2);border-top-color:var(--red);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.track-load-t{font-family:'Orbitron',monospace;font-size:.62rem;letter-spacing:.14em;color:var(--dim);}
+
+/* Panel picker modal */
+#picker-modal{display:none;position:fixed;inset:0;z-index:99999;background:rgba(2,4,10,.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);align-items:center;justify-content:center;}
+#picker-modal.open{display:flex;}
+.picker-box{background:var(--surf);border:1px solid var(--b2);border-radius:8px;padding:18px;width:360px;max-width:calc(100vw - 24px);max-height:calc(100vh - 48px);overflow-y:auto;}
+.picker-title{font-family:'Orbitron',monospace;font-size:.68rem;letter-spacing:.18em;color:var(--dim);margin-bottom:12px;}
+.picker-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.picker-item{background:var(--surf2);border:1px solid var(--b1);border-radius:5px;padding:11px;cursor:pointer;transition:all .18s;display:flex;align-items:center;gap:9px;}
+.picker-item:hover,.picker-item:active{border-color:rgba(0,207,255,.4);background:rgba(0,207,255,.05);}
+.picker-item-icon{font-size:1.1rem;}
+.picker-item-name{font-family:'Orbitron',monospace;font-size:.54rem;letter-spacing:.09em;color:var(--mid);}
+.picker-cancel{margin-top:10px;width:100%;background:transparent;border:1px solid var(--b1);color:var(--dim);padding:8px;border-radius:4px;font-family:'Orbitron',monospace;font-size:.58rem;letter-spacing:.1em;cursor:pointer;}
+.picker-cancel:hover{border-color:var(--red);color:var(--red);}
+
+/* ══════════════════════════════════════════ RESPONSIVE BREAKPOINT */
+@media(min-width:768px){
+  .mob-only{display:none!important;}
+  .desk-only{display:flex!important;}
+  #mob-nav{display:none!important;}
+  #mob-workspace{display:none!important;}
+  #desk-workspace{display:block!important;}
+  /* wider topbar */
+  .tb-inner{gap:10px;}
+  .logo{font-size:1rem;}
+  select.ctrl{padding:4px 9px;}
+  #status-txt{max-width:220px;}
+}
+@media(max-width:767px){
+  .desk-only{display:none!important;}
+  #desk-workspace{display:none!important;}
+  #mob-workspace{display:block!important;}
+  #mob-nav{display:flex!important;}
+  /* Compact topbar on mobile */
+  .tb-inner{gap:6px;padding:0 10px;}
+  .logo{font-size:.82rem;}
+  .ctrl-lbl{display:none;}
+  select.ctrl{font-size:.75rem;padding:3px 6px;}
+  .btn.load{padding:5px 9px;font-size:.54rem;}
+  #status-txt{display:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════ SHARED TOP BAR ══════════════════ -->
+<div id="topbar">
+  <div class="tb-inner">
+    <div class="logo">F1 LIVE<small>OPENF1</small></div>
+    <div class="sep"></div>
+
+    <!-- Mobile session controls (compact) -->
+    <div class="mob-only" style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
+      <select class="ctrl" id="m-sel-year" style="width:64px;" onchange="loadSessions()">
+        <option value="2025">2025</option><option value="2024">2024</option>
+        <option value="2023">2023</option><option value="2022">2022</option>
+      </select>
+      <select class="ctrl" id="m-sel-session" style="flex:1;min-width:0;max-width:none;"><option value="">Session…</option></select>
+      <button class="btn load" onclick="loadSession()">GO</button>
+    </div>
+
+    <!-- Desktop session controls -->
+    <div class="desk-only" style="align-items:center;gap:8px;">
+      <span class="ctrl-lbl">YEAR</span>
+      <select class="ctrl" id="d-sel-year" style="width:70px;" onchange="loadSessions()">
+        <option value="2025">2025</option><option value="2024">2024</option>
+        <option value="2023">2023</option><option value="2022">2022</option>
+      </select>
+      <span class="ctrl-lbl">SESSION</span>
+      <select class="ctrl" id="d-sel-session" style="max-width:210px;"><option value="">Load year…</option></select>
+      <button class="btn load" onclick="loadSession()">LOAD</button>
+    </div>
+
+    <div class="sep desk-only"></div>
+
+    <!-- Tiling (desktop only) -->
+    <div class="desk-only" style="align-items:center;gap:6px;">
+      <span class="ctrl-lbl">TILE</span>
+      <div class="tile-group">
+        <div class="tile-btn" onclick="tileWins('grid')" title="Grid">⊞</div>
+        <div class="tile-btn" onclick="tileWins('cols')" title="Columns">⫶</div>
+        <div class="tile-btn" onclick="tileWins('rows')" title="Rows">⋯</div>
+        <div class="tile-btn" onclick="cascadeWins()" title="Cascade">❐</div>
+      </div>
+    </div>
+
+    <!-- Add panel (desktop only) -->
+    <button class="btn add desk-only" onclick="openPicker()">+ PANEL</button>
+
+    <div class="f1"></div>
+
+    <div class="live-pip"><div class="pip-dot"></div><span class="desk-only" style="display:inline!important;">LIVE</span></div>
+    <div id="status-txt">Ready</div>
+  </div>
+</div>
+
+<!-- ══════════════════ MOBILE WORKSPACE ══════════════════ -->
+<div id="mob-workspace">
+  <div class="mob-panel active" id="mp-timing">
+    <div class="m-card">
+      <div class="m-card-hdr"><div class="m-card-title">TIMING TOWER</div><div class="m-card-badge" id="m-timing-badge">—</div></div>
+      <div id="m-timing-body" style="overflow-x:auto;"></div>
+    </div>
+  </div>
+  <div class="mob-panel" id="mp-track">
+    <div class="m-card">
+      <div class="m-card-hdr"><div class="m-card-title">TRACK MAP</div><div class="m-card-badge" id="m-track-badge">—</div></div>
+      <div style="height:55vw;min-height:220px;max-height:380px;">
+        <div class="track-wrap" id="m-track-wrap">
+          <canvas class="t-canvas" id="m-track-canvas"></canvas>
+          <div class="track-ctrl-btns">
+            <div class="t-zbtn" onclick="mTrackZoom(1.2)">+</div>
+            <div class="t-zbtn" onclick="mTrackZoom(0.8)">−</div>
+            <div class="t-zbtn" onclick="mTrackReset()">↺</div>
+          </div>
+          <div class="track-loading-ov" id="m-track-loading">
+            <div class="loader"></div>
+            <div class="track-load-t" id="m-track-load-t">LOAD A SESSION</div>
+          </div>
+          <div class="t-legend" id="m-track-legend"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="mob-panel" id="mp-telemetry">
+    <div class="m-card">
+      <div class="m-card-hdr"><div class="m-card-title">TELEMETRY</div></div>
+      <div id="m-telem-body"></div>
+    </div>
+  </div>
+  <div class="mob-panel" id="mp-standings">
+    <div class="m-card">
+      <div class="m-card-hdr"><div class="m-card-title">STANDINGS</div></div>
+      <div id="m-stand-body"></div>
+    </div>
+  </div>
+  <div class="mob-panel" id="mp-laps">
+    <div class="m-card">
+      <div class="m-card-hdr"><div class="m-card-title">LAP TIMES</div></div>
+      <div id="m-laps-body"></div>
+    </div>
+  </div>
+  <div class="mob-panel" id="mp-pitstops">
+    <div class="m-card">
+      <div class="m-card-hdr"><div class="m-card-title">PIT STOPS</div></div>
+      <div id="m-pits-body"></div>
+    </div>
+  </div>
+  <div class="mob-panel" id="mp-weather">
+    <div class="m-card">
+      <div class="m-card-hdr"><div class="m-card-title">WEATHER</div></div>
+      <div id="m-wx-body"></div>
+    </div>
+  </div>
+  <div class="mob-panel" id="mp-racecontrol">
+    <div class="m-card">
+      <div class="m-card-hdr"><div class="m-card-title">RACE CONTROL</div></div>
+      <div id="m-rc-body" style="max-height:70vh;overflow-y:auto;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Mobile tab nav -->
+<div id="mob-nav">
+  <div class="mob-tab active" onclick="mobTab('timing',this)"><div class="mob-tab-icon">🏁</div><div class="mob-tab-lbl">TIMING</div></div>
+  <div class="mob-tab" onclick="mobTab('track',this)"><div class="mob-tab-icon">🗺</div><div class="mob-tab-lbl">TRACK</div></div>
+  <div class="mob-tab" onclick="mobTab('telemetry',this)"><div class="mob-tab-icon">📊</div><div class="mob-tab-lbl">TELEM</div></div>
+  <div class="mob-tab" onclick="mobTab('standings',this)"><div class="mob-tab-icon">🏆</div><div class="mob-tab-lbl">STANDS</div></div>
+  <div class="mob-tab" onclick="mobTab('laps',this)"><div class="mob-tab-icon">⏱</div><div class="mob-tab-lbl">LAPS</div></div>
+  <div class="mob-tab" onclick="mobTab('pitstops',this)"><div class="mob-tab-icon">🔧</div><div class="mob-tab-lbl">PITS</div></div>
+  <div class="mob-tab" onclick="mobTab('weather',this)"><div class="mob-tab-icon">🌤</div><div class="mob-tab-lbl">WEATHER</div></div>
+  <div class="mob-tab" onclick="mobTab('racecontrol',this)"><div class="mob-tab-icon">📻</div><div class="mob-tab-lbl">RACE</div></div>
+</div>
+
+<!-- ══════════════════ DESKTOP WORKSPACE ══════════════════ -->
+<div id="desk-workspace"></div>
+
+<!-- Panel picker modal (desktop) -->
+<div id="picker-modal">
+  <div class="picker-box">
+    <div class="picker-title">ADD PANEL TO WORKSPACE</div>
+    <div class="picker-grid" id="picker-grid"></div>
+    <button class="picker-cancel" onclick="closePicker()">CANCEL</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+//  CONFIG
+// ═══════════════════════════════════════════
+const API = 'https://api.openf1.org/v1';
+const IS_MOBILE = () => window.innerWidth < 768;
+
+const PANELS = [
+  {id:'timing',    icon:'🏁',name:'TIMING TOWER'},
+  {id:'track',     icon:'🗺',name:'TRACK MAP'},
+  {id:'telemetry', icon:'📊',name:'TELEMETRY'},
+  {id:'standings', icon:'🏆',name:'STANDINGS'},
+  {id:'laps',      icon:'⏱',name:'LAP TIMES'},
+  {id:'pitstops',  icon:'🔧',name:'PIT STOPS'},
+  {id:'weather',   icon:'🌤',name:'WEATHER'},
+  {id:'racecontrol',icon:'📻',name:'RACE CONTROL'},
+];
+
+// ═══════════════════════════════════════════
+//  GLOBAL DATA STATE
+// ═══════════════════════════════════════════
+const G = {
+  sessionKey:null, locationName:'', year:2025,
+  drivers:{}, positions:[], locationData:[], carData:{},
+  laps:[], pits:[], weather:[], raceControl:[],
+  driverStandings:[], teamStandings:[],
+  locationLoaded:false, trackPts:[], driverLocs:{},
+  autoTimer:null,
+  // Mobile track state
+  mTrack:{ scale:1, offX:0, offY:0, panX:0, panY:0, inited:false, isDrag:false, dragX:0, dragY:0 },
+  // Mobile current tab
+  mobCurrentTab:'timing',
+  // Mobile lap filter
+  mobLapFilter:'',
+};
+
+const TCOLS = {
+  'Red Bull Racing':'#3671C6','Ferrari':'#E8001F','Mercedes':'#27F4D2',
+  'McLaren':'#FF8000','Aston Martin':'#358C75','Alpine':'#FF87BC',
+  'Williams':'#64C4FF','RB':'#6692FF','Haas F1 Team':'#B6BABD','Kick Sauber':'#52E252',
+};
+const teamCol = t=>{ for(const[k,v] of Object.entries(TCOLS)) if((t||'').includes(k)) return v; return '#777'; };
+const drvCol = d=> d?.team_colour?'#'+d.team_colour:teamCol(d?.team_name);
+const fmtT = s=>{ if(!s) return '—'; const m=Math.floor(s/60),r=(s%60).toFixed(3); return m>0?`${m}:${r<10?'0'+r:r}`:String(parseFloat(r.toFixed(3))); };
+
+function setStatus(msg,cls=''){
+  const el=document.getElementById('status-txt');
+  el.textContent=msg; el.className=cls;
+}
+
+async function apiFetch(ep,params={}){
+  const url=new URL(API+ep);
+  Object.entries(params).forEach(([k,v])=>url.searchParams.set(k,v));
+  const r=await fetch(url);
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return r.json();
+}
+
+// ═══════════════════════════════════════════
+//  SESSION LOADING
+// ═══════════════════════════════════════════
+async function loadSessions(){
+  const isMob = IS_MOBILE();
+  const yearSel = isMob ? document.getElementById('m-sel-year') : document.getElementById('d-sel-year');
+  const sessSel = isMob ? document.getElementById('m-sel-session') : document.getElementById('d-sel-session');
+  const year = yearSel.value;
+  G.year = parseInt(year);
+  setStatus('Loading…');
+  try{
+    const sessions = await apiFetch('/sessions',{year});
+    // Populate both selects
+    const byMtg={};
+    sessions.forEach(s=>{
+      if(!byMtg[s.meeting_key]) byMtg[s.meeting_key]={name:s.meeting_name||s.location,sessions:[]};
+      byMtg[s.meeting_key].sessions.push(s);
+    });
+    const buildOpts = sel => {
+      sel.innerHTML='';
+      Object.values(byMtg).reverse().forEach(m=>{
+        const g=document.createElement('optgroup'); g.label=m.name;
+        m.sessions.forEach(s=>{
+          const o=document.createElement('option');
+          o.value=s.session_key;
+          o.textContent=s.session_name+(s.date_start?' ('+s.date_start.slice(0,10)+')':'');
+          o.dataset.location=s.location||s.meeting_name||'';
+          g.appendChild(o);
+        });
+        sel.appendChild(g);
+      });
+    };
+    buildOpts(document.getElementById('m-sel-session'));
+    buildOpts(document.getElementById('d-sel-session'));
+    // Sync year selects
+    document.getElementById('m-sel-year').value=year;
+    document.getElementById('d-sel-year').value=year;
+    setStatus(sessions.length+' sessions','ok');
+  } catch(e){ setStatus('Error','err'); }
+}
+
+async function loadSession(){
+  const isMob = IS_MOBILE();
+  const sessSel = isMob ? document.getElementById('m-sel-session') : document.getElementById('d-sel-session');
+  const opt = sessSel.selectedOptions[0];
+  if(!opt||!opt.value){ setStatus('Select session','err'); return; }
+  G.sessionKey=parseInt(opt.value);
+  G.locationName=opt.dataset.location||'';
+  G.locationLoaded=false; G.trackPts=[]; G.driverLocs={};
+  if(G.autoTimer) clearInterval(G.autoTimer);
+  // Sync both selects to same session
+  document.getElementById('m-sel-session').value=opt.value;
+  document.getElementById('d-sel-session').value=opt.value;
+  setMobTrackLoading('LOADING GPS DATA…');
+  await fetchAll();
+  G.autoTimer=setInterval(()=>fetchAll(true),30000);
+}
+
+async function fetchAll(silent=false){
+  if(!G.sessionKey) return;
+  if(!silent) setStatus('Loading…');
+  try{
+    const [drv,pos,car,laps,pits,wx,rc]=await Promise.allSettled([
+      apiFetch('/drivers',{session_key:G.sessionKey}),
+      apiFetch('/position',{session_key:G.sessionKey}),
+      apiFetch('/car_data',{session_key:G.sessionKey}),
+      apiFetch('/laps',{session_key:G.sessionKey}),
+      apiFetch('/pit',{session_key:G.sessionKey}),
+      apiFetch('/weather',{session_key:G.sessionKey}),
+      apiFetch('/race_control',{session_key:G.sessionKey}),
+    ]);
+    if(drv.status==='fulfilled'){G.drivers={};drv.value.forEach(d=>G.drivers[d.driver_number]=d);}
+    if(pos.status==='fulfilled') G.positions=pos.value;
+    if(car.status==='fulfilled') G.carData=latestBy(car.value,'driver_number');
+    if(laps.status==='fulfilled') G.laps=laps.value;
+    if(pits.status==='fulfilled') G.pits=pits.value;
+    if(wx.status==='fulfilled') G.weather=wx.value;
+    if(rc.status==='fulfilled') G.raceControl=rc.value;
+    const [dS,tS]=await Promise.allSettled([
+      apiFetch('/championship_drivers',{session_key:G.sessionKey}),
+      apiFetch('/championship_teams',{session_key:G.sessionKey}),
+    ]);
+    if(dS.status==='fulfilled') G.driverStandings=dS.value;
+    if(tS.status==='fulfilled') G.teamStandings=tS.value;
+    if(!G.locationLoaded) fetchLocationData();
+    else { buildDriverLocs(); refreshAllTrack(); }
+    refreshAll();
+    setStatus('Updated '+new Date().toLocaleTimeString(),'ok');
+  } catch(e){ setStatus('Error: '+e.message,'err'); }
+}
+
+async function fetchLocationData(){
+  setStatus('Loading GPS…');
+  try{
+    G.locationData=await apiFetch('/location',{session_key:G.sessionKey});
+    G.locationLoaded=true;
+    buildTrackOutline();
+    buildDriverLocs();
+    refreshAllTrack();
+    setStatus('Track ready','ok');
+  } catch(e){ setStatus('GPS N/A',''); clearMobTrackLoading(); }
+}
+
+function latestBy(arr,key){
+  const m={};
+  arr.forEach(d=>{if(!m[d[key]]||d.date>m[d[key]].date)m[d[key]]=d;});
+  return m;
+}
+function getLatestPos(){
+  const m={};
+  G.positions.forEach(p=>{if(!m[p.driver_number]||p.date>m[p.driver_number].date)m[p.driver_number]=p;});
+  return Object.values(m).sort((a,b)=>a.position-b.position);
+}
+
+// ═══════════════════════════════════════════
+//  TRACK DATA
+// ═══════════════════════════════════════════
+function buildTrackOutline(){
+  if(!G.locationData.length) return;
+  const groups={};
+  G.locationData.forEach(p=>{
+    if(p.x===undefined||(p.x===0&&p.y===0)) return;
+    if(!groups[p.driver_number]) groups[p.driver_number]=[];
+    groups[p.driver_number].push(p);
+  });
+  let best=null,bestN=0;
+  Object.entries(groups).forEach(([dn,pts])=>{if(pts.length>bestN){bestN=pts.length;best=dn;}});
+  if(!best) return;
+  const raw=groups[best].sort((a,b)=>a.date<b.date?-1:1)
+    .filter((p,i,a)=>i===0||Math.hypot(p.x-a[i-1].x,p.y-a[i-1].y)>1.5);
+  const W=8;
+  G.trackPts=raw.map((p,i)=>{
+    const sl=raw.slice(Math.max(0,i-W),Math.min(raw.length,i+W+1));
+    return{x:sl.reduce((s,q)=>s+q.x,0)/sl.length,y:sl.reduce((s,q)=>s+q.y,0)/sl.length};
+  });
+}
+
+function buildDriverLocs(){
+  if(!G.locationData.length) return;
+  const latLoc={};
+  G.locationData.forEach(p=>{
+    if(p.x===undefined||(p.x===0&&p.y===0)) return;
+    if(!latLoc[p.driver_number]||p.date>latLoc[p.driver_number].date) latLoc[p.driver_number]=p;
+  });
+  const positions=getLatestPos();
+  G.driverLocs={};
+  positions.forEach(p=>{
+    const loc=latLoc[p.driver_number]; if(!loc) return;
+    const d=G.drivers[p.driver_number]||{};
+    G.driverLocs[p.driver_number]={x:loc.x,y:loc.y,color:drvCol(d),abbr:d.name_acronym||'#'+p.driver_number,pos:p.position};
+  });
+}
+
+// Generic track draw onto any canvas
+function initTrackTransform(canvas, ts){
+  const W=canvas.width, H=canvas.height;
+  if(!G.trackPts.length||W===0||H===0) return;
+  const xs=G.trackPts.map(p=>p.x), ys=G.trackPts.map(p=>p.y);
+  const mnX=Math.min(...xs),mxX=Math.max(...xs),mnY=Math.min(...ys),mxY=Math.max(...ys);
+  const rX=mxX-mnX||1, rY=mxY-mnY||1;
+  const pad=48;
+  ts.scale=Math.min((W-pad*2)/rX,(H-pad*2)/rY);
+  ts.offX=pad+((W-pad*2)-rX*ts.scale)/2-mnX*ts.scale;
+  ts.offY=pad+((H-pad*2)-rY*ts.scale)/2-mnY*ts.scale;
+  ts.panX=0; ts.panY=0; ts.inited=true;
+}
+
+function drawTrackOnCanvas(canvas, ts){
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width, H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  const bg=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.max(W,H)/1.4);
+  bg.addColorStop(0,'#06101c'); bg.addColorStop(1,'#020408');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='rgba(255,255,255,.012)';
+  for(let x=0;x<W;x+=24) for(let y=0;y<H;y+=24){ctx.beginPath();ctx.arc(x,y,.7,0,Math.PI*2);ctx.fill();}
+  if(G.trackPts.length<4) return;
+  const wp=(x,y)=>({cx:x*ts.scale+ts.offX+ts.panX,cy:y*ts.scale+ts.offY+ts.panY});
+  const pts=G.trackPts.map(p=>wp(p.x,p.y));
+  const dp=(lw,col,dash=false)=>{
+    ctx.beginPath();
+    pts.forEach((p,i)=>i===0?ctx.moveTo(p.cx,p.cy):ctx.lineTo(p.cx,p.cy));
+    ctx.closePath();
+    if(dash) ctx.setLineDash([7,7]); else ctx.setLineDash([]);
+    ctx.strokeStyle=col; ctx.lineWidth=lw; ctx.lineJoin='round'; ctx.lineCap='round'; ctx.stroke();
+  };
+  ctx.shadowColor='rgba(25,70,190,.18)'; ctx.shadowBlur=14;
+  dp(26,'rgba(22,60,150,.13)');
+  ctx.shadowBlur=0;
+  dp(20,'#1e2e40'); dp(14,'#111a25'); dp(1.2,'rgba(255,255,255,.04)',true);
+  // S/F line
+  if(pts.length>2){
+    const p0=pts[0],p1=pts[2];
+    const ang=Math.atan2(p1.cy-p0.cy,p1.cx-p0.cx)+Math.PI/2;
+    ctx.save(); ctx.translate(p0.cx,p0.cy); ctx.rotate(ang);
+    for(let r=0;r<2;r++) for(let c=0;c<3;c++){
+      ctx.fillStyle=(r+c)%2===0?'rgba(255,255,255,.85)':'rgba(0,0,0,.7)';
+      ctx.fillRect((c-1.5)*4,(r-1)*9,4,9);
+    }
+    ctx.restore();
+  }
+  // Drivers
+  Object.values(G.driverLocs).sort((a,b)=>b.pos-a.pos).forEach(d=>{
+    const{cx,cy}=wp(d.x,d.y);
+    if(cx<-20||cx>W+20||cy<-20||cy>H+20) return;
+    const r=5.5;
+    const grd=ctx.createRadialGradient(cx,cy,0,cx,cy,r*3);
+    grd.addColorStop(0,d.color+'66'); grd.addColorStop(1,'transparent');
+    ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(cx,cy,r*3,0,Math.PI*2); ctx.fill();
+    ctx.shadowColor=d.color; ctx.shadowBlur=8;
+    ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fillStyle=d.color; ctx.fill();
+    ctx.shadowBlur=0;
+    ctx.strokeStyle='rgba(255,255,255,.75)'; ctx.lineWidth=1.2; ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx+r+1,cy-r-1,4.5,0,Math.PI*2);
+    ctx.fillStyle='#020408'; ctx.fill(); ctx.strokeStyle=d.color; ctx.lineWidth=.8; ctx.stroke();
+    ctx.fillStyle=d.color; ctx.font='bold 5px "Share Tech Mono"';
+    ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(d.pos,cx+r+1,cy-r-1);
+    ctx.font='bold 7px "Share Tech Mono"'; ctx.textAlign='center';
+    const lw=ctx.measureText(d.abbr).width+6;
+    ctx.fillStyle='rgba(2,4,10,.78)'; ctx.fillRect(cx-lw/2,cy-r-16,lw,11);
+    ctx.strokeStyle=d.color+'44'; ctx.lineWidth=.6; ctx.strokeRect(cx-lw/2,cy-r-16,lw,11);
+    ctx.fillStyle=d.color; ctx.textBaseline='middle'; ctx.fillText(d.abbr,cx,cy-r-10.5);
+  });
+}
+
+// ═══════════════════════════════════════════
+//  MOBILE TRACK
+// ═══════════════════════════════════════════
+function setMobTrackLoading(msg){
+  const ov=document.getElementById('m-track-loading');
+  const t=document.getElementById('m-track-load-t');
+  if(ov) ov.style.display='flex';
+  if(t) t.textContent=msg;
+}
+function clearMobTrackLoading(){
+  const ov=document.getElementById('m-track-loading');
+  if(ov) ov.style.display='none';
+}
+
+function initMobTrack(){
+  const canvas=document.getElementById('m-track-canvas');
+  const wrap=document.getElementById('m-track-wrap');
+  if(!canvas||!wrap||!G.trackPts.length) return;
+  canvas.width=wrap.clientWidth;
+  canvas.height=wrap.clientHeight;
+  const ts=G.mTrack;
+  initTrackTransform(canvas,ts);
+  clearMobTrackLoading();
+  drawTrackOnCanvas(canvas,ts);
+  updateMobTrackLegend();
+  document.getElementById('m-track-badge').textContent=G.trackPts.length+' GPS PTS';
+}
+
+function updateMobTrackLegend(){
+  const leg=document.getElementById('m-track-legend'); if(!leg) return;
+  const sorted=Object.values(G.driverLocs).sort((a,b)=>a.pos-b.pos);
+  leg.innerHTML=sorted.map(d=>`<div class="leg-item"><div class="leg-dot" style="background:${d.color};box-shadow:0 0 4px ${d.color}77;"></div>${d.abbr}</div>`).join('');
+}
+
+function mTrackZoom(f){
+  const canvas=document.getElementById('m-track-canvas'); if(!canvas) return;
+  const ts=G.mTrack;
+  const cx=canvas.width/2, cy=canvas.height/2;
+  ts.offX=cx+(ts.offX-cx)*f; ts.offY=cy+(ts.offY-cy)*f; ts.scale*=f;
+  drawTrackOnCanvas(canvas,ts);
+}
+function mTrackReset(){ G.mTrack.inited=false; initMobTrack(); }
+
+// Mobile track touch drag
+(()=>{
+  const setup=()=>{
+    const canvas=document.getElementById('m-track-canvas'); if(!canvas) return;
+    canvas.addEventListener('touchstart',e=>{
+      G.mTrack.isDrag=true;
+      G.mTrack.dragX=e.touches[0].clientX;
+      G.mTrack.dragY=e.touches[0].clientY;
+    },{passive:true});
+    canvas.addEventListener('touchmove',e=>{
+      if(!G.mTrack.isDrag) return;
+      const ts=G.mTrack;
+      ts.panX+=e.touches[0].clientX-ts.dragX;
+      ts.panY+=e.touches[0].clientY-ts.dragY;
+      ts.dragX=e.touches[0].clientX;
+      ts.dragY=e.touches[0].clientY;
+      drawTrackOnCanvas(canvas,ts);
+    },{passive:true});
+    canvas.addEventListener('touchend',()=>{G.mTrack.isDrag=false;},{passive:true});
+    // Mouse too
+    canvas.addEventListener('mousedown',e=>{G.mTrack.isDrag=true;G.mTrack.dragX=e.clientX;G.mTrack.dragY=e.clientY;});
+    document.addEventListener('mousemove',e=>{
+      if(!G.mTrack.isDrag||G.mTrack._forWin) return;
+      const ts=G.mTrack;
+      ts.panX+=e.clientX-ts.dragX; ts.panY+=e.clientY-ts.dragY;
+      ts.dragX=e.clientX; ts.dragY=e.clientY;
+      drawTrackOnCanvas(canvas,ts);
+    });
+    document.addEventListener('mouseup',()=>{G.mTrack.isDrag=false;});
+    canvas.addEventListener('wheel',e=>{
+      e.preventDefault();
+      const f=e.deltaY<0?1.1:0.9;
+      const rect=canvas.getBoundingClientRect();
+      const ts=G.mTrack;
+      ts.offX=(e.clientX-rect.left)+(ts.offX-(e.clientX-rect.left))*f;
+      ts.offY=(e.clientY-rect.top)+(ts.offY-(e.clientY-rect.top))*f;
+      ts.scale*=f;
+      drawTrackOnCanvas(canvas,ts);
+    },{passive:false});
+  };
+  document.addEventListener('DOMContentLoaded',setup);
+})();
+
+// ═══════════════════════════════════════════
+//  MOBILE TABS
+// ═══════════════════════════════════════════
+function mobTab(id, el){
+  document.querySelectorAll('.mob-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.mob-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('mp-'+id).classList.add('active');
+  if(el) el.classList.add('active');
+  G.mobCurrentTab=id;
+  if(id==='track' && G.trackPts.length>0 && !G.mTrack.inited) {
+    setTimeout(initMobTrack,50);
+  }
+  // Scroll mob workspace to top
+  const ws=document.getElementById('mob-workspace');
+  if(ws) ws.scrollTop=0;
+}
+
+function refreshAllTrack(){
+  // Mobile
+  const mobCanvas=document.getElementById('m-track-canvas');
+  const mobWrap=document.getElementById('m-track-wrap');
+  if(mobCanvas&&mobWrap&&G.trackPts.length){
+    if(!G.mTrack.inited){
+      mobCanvas.width=mobWrap.clientWidth;
+      mobCanvas.height=mobWrap.clientHeight;
+      initTrackTransform(mobCanvas,G.mTrack);
+      clearMobTrackLoading();
+      G.mTrack.inited=true;
+    }
+    drawTrackOnCanvas(mobCanvas,G.mTrack);
+    updateMobTrackLegend();
+    document.getElementById('m-track-badge').textContent=G.trackPts.length+' GPS PTS';
+  }
+  // Desktop windows
+  WM.windows.filter(w=>w.type==='track').forEach(w=>{
+    if(!w.ts.inited) initDesktopTrack(w.id);
+    else { const c=document.getElementById('tc-'+w.id); if(c) drawTrackOnCanvas(c,w.ts); updateDesktopTrackLegend(w.id); }
+  });
+}
+
+// ═══════════════════════════════════════════
+//  REFRESH ALL PANELS
+// ═══════════════════════════════════════════
+function refreshAll(){
+  if(IS_MOBILE()){
+    renderMobTiming(); renderMobTelemetry(); renderMobStandings();
+    renderMobLaps(); renderMobPits(); renderMobWeather(); renderMobRC();
+  } else {
+    WM.windows.forEach(w=>renderWin(w.id));
+  }
+}
+
+// ═══════════════════════════════════════════
+//  MOBILE RENDERERS
+// ═══════════════════════════════════════════
+function noData(icon,title,sub=''){
+  return `<div class="p-empty"><div class="p-empty-icon">${icon}</div><div class="p-empty-title">${title}</div>${sub?`<div class="p-empty-sub">${sub}</div>`:''}</div>`;
+}
+
+function getTyre(dn){
+  const last=G.pits.filter(p=>p.driver_number===dn).sort((a,b)=>b.lap_number-a.lap_number)[0];
+  const c=last?.tyre_compound;
+  if(!c) return '<span class="tyre tyre-unknown">?</span>';
+  return `<span class="tyre tyre-${c.toLowerCase()}">${c[0]}</span>`;
+}
+
+function renderMobTiming(){
+  const pos=getLatestPos();
+  if(!pos.length){ document.getElementById('m-timing-body').innerHTML=noData('🏎','NO DATA','Load a session first'); return; }
+  const bestLaps={};
+  G.laps.forEach(l=>{if(l.lap_duration&&(!bestLaps[l.driver_number]||l.lap_duration<bestLaps[l.driver_number]))bestLaps[l.driver_number]=l.lap_duration;});
+  const overallBest=Math.min(...Object.values(bestLaps).filter(Boolean));
+  const curLap={};
+  G.laps.forEach(l=>{if(!curLap[l.driver_number]||l.lap_number>curLap[l.driver_number].lap_number)curLap[l.driver_number]=l;});
+  const ldrBest=bestLaps[pos[0]?.driver_number];
+  let html=`<div style="overflow-x:auto;"><table class="t-tbl"><thead><tr>
+    <th>POS</th><th>DRIVER</th><th>GAP</th><th>BEST</th><th>TY</th><th>DRS</th>
+  </tr></thead><tbody>`;
+  pos.forEach((p,i)=>{
+    const d=G.drivers[p.driver_number]||{},car=G.carData[p.driver_number]||{},ld=curLap[p.driver_number]||{};
+    const best=bestLaps[p.driver_number],isFast=best&&best===overallBest;
+    const pp=p.position,pc=pp===1?'g1':pp===2?'g2':pp===3?'g3':'';
+    const col=drvCol(d);
+    const gap=i===0?'LEAD':(ldrBest&&best?'+'+((best-ldrBest).toFixed(3))+'s':'—');
+    const drsOn=(car.drs||0)>=10;
+    html+=`<tr><td><span class="pos ${pc}">${pp}</span></td>
+      <td><div style="display:flex;align-items:center;gap:5px;">
+        <span class="d-num" style="background:${col}22;color:${col};border:1px solid ${col}44;">${p.driver_number}</span>
+        <span class="d-abbr" style="color:${col};">${d.name_acronym||'?'}</span>
+      </div></td>
+      <td class="dim">${gap}</td>
+      <td class="${isFast?'fastest':'dim'}">${best?fmtT(best):'—'}${isFast?' ◆':''}</td>
+      <td>${getTyre(p.driver_number)}</td>
+      <td>${drsOn?'<span class="drs-on">DRS</span>':'<span class="dim">—</span>'}</td>
+    </tr>`;
+  });
+  html+='</tbody></table></div>';
+  document.getElementById('m-timing-body').innerHTML=html;
+  document.getElementById('m-timing-badge').textContent=pos.length+' CARS';
+}
+
+function renderMobTelemetry(){
+  const pos=getLatestPos();
+  if(!pos.length){ document.getElementById('m-telem-body').innerHTML=noData('📊','NO DATA'); return; }
+  let html='<div class="telem-grid">';
+  pos.forEach(p=>{
+    const d=G.drivers[p.driver_number]||{},car=G.carData[p.driver_number]||{};
+    const col=drvCol(d),position=p.position;
+    const dlaps=G.laps.filter(l=>l.driver_number===p.driver_number&&l.lap_duration);
+    const best=dlaps.length?Math.min(...dlaps.map(l=>l.lap_duration)):null;
+    const thr=car.throttle||0,brk=car.brake||0,gear=car.n_gear||0,rpm=car.rpm||0,spd=car.speed||0;
+    const drs=(car.drs||0)>=10;
+    html+=`<div class="d-card">
+      <div class="d-card-hdr" style="border-left:3px solid ${col};">
+        <div class="d-card-num" style="color:${col};">${p.driver_number}</div>
+        <div class="d-card-info">
+          <div class="d-card-name">${d.last_name||d.full_name||'DRV'}</div>
+          <div class="d-card-team" style="color:${col}88;">${d.team_name||'—'}</div>
+        </div>
+        <div class="d-card-pos ${position===1?'g1':''}">P${position}</div>
+      </div>
+      <div class="bars">
+        <div class="bar-row"><div class="bar-lbl"><span>THROTTLE</span><span class="bar-val">${thr}%</span></div><div class="bar-track"><div class="bar-fill bt" style="width:${thr}%"></div></div></div>
+        <div class="bar-row"><div class="bar-lbl"><span>BRAKE</span><span class="bar-val">${brk}%</span></div><div class="bar-track"><div class="bar-fill bb" style="width:${brk}%"></div></div></div>
+        <div class="bar-row"><div class="bar-lbl"><span>GEAR</span><span class="bar-val">${gear}/8</span></div><div class="bar-track"><div class="bar-fill bg" style="width:${(gear/8)*100}%"></div></div></div>
+        <div class="bar-row"><div class="bar-lbl"><span>RPM</span><span class="bar-val">${rpm.toLocaleString()}</span></div><div class="bar-track"><div class="bar-fill br" style="width:${Math.min((rpm/15000)*100,100)}%"></div></div></div>
+      </div>
+      <div class="d-stats">
+        <div class="s-box"><div class="s-val">${spd}</div><div class="s-lbl">KM/H</div></div>
+        <div class="s-box"><div class="s-val">${best?fmtT(best):'—'}</div><div class="s-lbl">BEST</div></div>
+        <div class="s-box"><div class="s-val" style="color:${drs?'var(--green)':''}">${drs?'ON':'OFF'}</div><div class="s-lbl">DRS</div></div>
+        <div class="s-box"><div class="s-val">${dlaps.length}</div><div class="s-lbl">LAPS</div></div>
+        <div class="s-box"><div class="s-val">${d.name_acronym||'—'}</div><div class="s-lbl">CODE</div></div>
+        <div class="s-box"><div class="s-val">${G.pits.filter(pt=>pt.driver_number===p.driver_number).length}</div><div class="s-lbl">STOPS</div></div>
+      </div>
+    </div>`;
+  });
+  html+='</div>';
+  document.getElementById('m-telem-body').innerHTML=html;
+}
+
+function renderMobStandings(){
+  const el=document.getElementById('m-stand-body');
+  if(!G.driverStandings.length&&!G.teamStandings.length){el.innerHTML=noData('📭','NOT AVAILABLE','Load a race session');return;}
+  let html='';
+  if(G.driverStandings.length){
+    const mx=Math.max(...G.driverStandings.map(d=>d.points||0));
+    html+=`<div class="section-hdr">DRIVER CHAMPIONSHIP</div>`;
+    html+=G.driverStandings.sort((a,b)=>(a.position||99)-(b.position||99)).map(s=>{
+      const d=G.drivers[s.driver_number]||{},col=drvCol(d),pp=s.position,pc=pp===1?'g1':pp===2?'g2':pp===3?'g3':'';
+      return `<div class="stand-row"><span class="pos ${pc}">${pp}</span>
+        <span class="d-num" style="background:${col}22;color:${col};border:1px solid ${col}44;padding:1px 5px;border-radius:2px;font-family:'Orbitron',monospace;font-size:.62rem;">${d.name_acronym||'DRV'}</span>
+        <span class="d-name" style="flex:1;">${d.last_name||'#'+s.driver_number}</span>
+        <div class="pts-track"><div class="pts-fill" style="width:${mx?(s.points/mx)*100:0}%"></div></div>
+        <span class="pts-val">${s.points}</span></div>`;
+    }).join('');
+  }
+  if(G.teamStandings.length){
+    const mx=Math.max(...G.teamStandings.map(t=>t.points||0));
+    html+=`<div class="section-hdr" style="margin-top:8px;">CONSTRUCTOR CHAMPIONSHIP</div>`;
+    html+=G.teamStandings.sort((a,b)=>(a.position||99)-(b.position||99)).map(s=>{
+      const col=teamCol(s.team_name),pp=s.position,pc=pp===1?'g1':pp===2?'g2':pp===3?'g3':'';
+      return `<div class="stand-row"><span class="pos ${pc}">${pp}</span>
+        <div style="width:8px;height:8px;border-radius:50%;background:${col};flex-shrink:0;"></div>
+        <span class="d-name" style="flex:1;">${s.team_name||'Team'}</span>
+        <div class="pts-track"><div class="pts-fill" style="width:${mx?(s.points/mx)*100:0}%;background:linear-gradient(90deg,${col},${col}88);"></div></div>
+        <span class="pts-val">${s.points}</span></div>`;
+    }).join('');
+  }
+  el.innerHTML=html;
+}
+
+function renderMobLaps(){
+  const el=document.getElementById('m-laps-body');
+  if(!G.laps.length){el.innerHTML=noData('⏱','NO LAP DATA');return;}
+  const drivers=[...new Set(G.laps.map(l=>l.driver_number))];
+  const selOpts='<option value="">All</option>'+drivers.map(n=>{
+    const d=G.drivers[n]||{};
+    return `<option value="${n}" ${G.mobLapFilter==n?'selected':''}>${(d.name_acronym||'DRV')} #${n}</option>`;
+  }).join('');
+  const filt=G.mobLapFilter;
+  let laps=G.laps.filter(l=>!filt||l.driver_number==filt).sort((a,b)=>a.driver_number-b.driver_number||a.lap_number-b.lap_number);
+  const fastest=Math.min(...laps.filter(l=>l.lap_duration).map(l=>l.lap_duration));
+  let html=`<div class="lap-filter-bar">
+    <span style="font-family:'Orbitron',monospace;font-size:.58rem;letter-spacing:.12em;color:var(--dim);">DRIVER</span>
+    <select class="drv-sel" onchange="G.mobLapFilter=this.value;renderMobLaps()">${selOpts}</select>
+  </div>
+  <div style="overflow-x:auto;"><table class="t-tbl"><thead><tr>
+    <th>DRV</th><th>LAP</th><th>TIME</th><th>S1</th><th>S2</th><th>S3</th>
+  </tr></thead><tbody>`;
+  laps.forEach(l=>{
+    const d=G.drivers[l.driver_number]||{},col=drvCol(d);
+    const isFast=l.lap_duration&&l.lap_duration===fastest;
+    html+=`<tr><td><div style="display:flex;align-items:center;gap:4px;">
+      <span style="width:5px;height:5px;border-radius:50%;background:${col};display:inline-block;flex-shrink:0;"></span>
+      <span class="d-abbr" style="color:${col};">${d.name_acronym||'?'}</span>
+    </div></td>
+    <td class="dim">${l.lap_number}</td>
+    <td class="${isFast?'fastest':'dim'}">${l.lap_duration?fmtT(l.lap_duration):'—'}${isFast?' ◆':''}</td>
+    <td class="dim" style="font-size:.65rem;">${l.duration_sector_1?fmtT(l.duration_sector_1):'—'}</td>
+    <td class="dim" style="font-size:.65rem;">${l.duration_sector_2?fmtT(l.duration_sector_2):'—'}</td>
+    <td class="dim" style="font-size:.65rem;">${l.duration_sector_3?fmtT(l.duration_sector_3):'—'}</td></tr>`;
+  });
+  html+='</tbody></table></div>';
+  el.innerHTML=html;
+}
+
+function renderMobPits(){
+  const el=document.getElementById('m-pits-body');
+  if(!G.pits.length){el.innerHTML=noData('🔧','NO PIT DATA');return;}
+  let html='<table class="t-tbl"><thead><tr><th>DRIVER</th><th>LAP</th><th>DURATION</th><th>COMPOUND</th></tr></thead><tbody>';
+  [...G.pits].sort((a,b)=>a.lap_number-b.lap_number).forEach(p=>{
+    const d=G.drivers[p.driver_number]||{},col=drvCol(d),c=p.tyre_compound;
+    html+=`<tr><td><div style="display:flex;align-items:center;gap:5px;">
+      <span style="width:6px;height:6px;border-radius:50%;background:${col};display:inline-block;flex-shrink:0;"></span>
+      <span class="d-abbr" style="color:${col};">${d.name_acronym||'?'}</span>
+    </div></td>
+    <td style="font-family:'Orbitron',monospace;font-size:.72rem;color:var(--cyan);">L${p.lap_number||'?'}</td>
+    <td style="font-family:'Share Tech Mono';color:var(--gold);">${p.pit_duration?p.pit_duration.toFixed(1)+'s':'—'}</td>
+    <td>${c?`<span class="tyre tyre-${c.toLowerCase()}">${c[0]}</span>`:'—'}</td></tr>`;
+  });
+  html+='</tbody></table>';
+  document.getElementById('m-pits-body').innerHTML=html;
+}
+
+function renderMobWeather(){
+  const w=G.weather[G.weather.length-1];
+  if(!w){document.getElementById('m-wx-body').innerHTML=noData('🌤','NO WEATHER DATA');return;}
+  const boxes=[
+    {icon:'🌡',lbl:'AIR',val:(w.air_temperature||'—')+'°C',col:'#ff8060'},
+    {icon:'🏎',lbl:'TRACK',val:(w.track_temperature||'—')+'°C',col:'#ff4500'},
+    {icon:'💨',lbl:'WIND',val:(w.wind_speed||'—')+' m/s',col:'#00cfff'},
+    {icon:'🧭',lbl:'DIR',val:(w.wind_direction||'—')+'°',col:'#7a9ab0'},
+    {icon:'💧',lbl:'HUMIDITY',val:(w.humidity||'—')+'%',col:'#00cfff'},
+    {icon:'🌧',lbl:'RAIN',val:w.rainfall?'YES':'NO',col:w.rainfall?'#00cfff':'#4a6580'},
+    {icon:'📊',lbl:'PRESSURE',val:(w.pressure||'—')+' mb',col:'#c77dff'},
+  ];
+  let html=`<div style="padding:8px 12px;font-size:.62rem;color:var(--dim);font-family:'Share Tech Mono';">LAST: ${w.date?new Date(w.date).toLocaleTimeString():'—'}</div>`;
+  html+='<div class="wx-grid">'+boxes.map(b=>`<div class="wx-box"><div class="wx-icon">${b.icon}</div><div class="wx-lbl">${b.lbl}</div><div class="wx-val" style="color:${b.col};">${b.val}</div></div>`).join('')+'</div>';
+  document.getElementById('m-wx-body').innerHTML=html;
+}
+
+function renderMobRC(){
+  if(!G.raceControl.length){document.getElementById('m-rc-body').innerHTML=noData('📻','NO MESSAGES');return;}
+  const FE={'GREEN':'🟢','YELLOW':'🟡','RED':'🔴','SAFETY CAR':'🚗','VIRTUAL SAFETY CAR':'🟡','CHEQUERED':'🏁','BLUE':'🔵'};
+  document.getElementById('m-rc-body').innerHTML=[...G.raceControl].sort((a,b)=>b.date>a.date?1:-1).map(rc=>{
+    const cat=(rc.category||'info').toLowerCase();
+    const cc=cat.includes('flag')?'rc-flag':cat.includes('incident')?'rc-inc':'rc-info';
+    const fe=rc.flag?(FE[rc.flag]||'🚩'):'';
+    return `<div class="rc-item">
+      <div class="rc-time">${rc.date?new Date(rc.date).toLocaleTimeString():'—'}</div>
+      <div style="flex:1;">
+        <div style="display:flex;gap:5px;align-items:center;margin-bottom:3px;">
+          <span class="rc-cat ${cc}">${rc.category||'INFO'}</span>
+          ${fe?`<span style="font-size:.85rem;">${fe}</span>`:''}`
+          +(rc.flag?`<span style="font-size:.58rem;color:var(--dim);">${rc.flag}</span>`:'')
+        +`</div>
+        <div class="rc-msg">${rc.message||'—'}</div>
+        ${rc.driver_number?`<div style="font-size:.6rem;color:var(--dim);margin-top:2px;">Drv #${rc.driver_number}${rc.lap_number?' · L'+rc.lap_number:''}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+//  DESKTOP WINDOW MANAGER
+// ═══════════════════════════════════════════
+const WM = {
+  windows:[], zTop:10, nextId:1,
+  drag:null, resize:null,
+};
+
+function getWin(id){ return WM.windows.find(w=>w.id===id); }
+
+function openPicker(){ document.getElementById('picker-modal').classList.add('open'); }
+function closePicker(){ document.getElementById('picker-modal').classList.remove('open'); }
+
+function buildPicker(){
+  document.getElementById('picker-grid').innerHTML=PANELS.map(p=>`
+    <div class="picker-item" onclick="spawnWin('${p.id}');closePicker();">
+      <span class="picker-item-icon">${p.icon}</span>
+      <div>
+        <div class="picker-item-name">${p.name}</div>
+      </div>
+    </div>`).join('');
+}
+
+function spawnWin(type,x,y,w,h){
+  const ws=document.getElementById('desk-workspace');
+  const W=ws.clientWidth,H=ws.clientHeight;
+  const winW=w||Math.min(500,W*0.44), winH=h||Math.min(400,H*0.54);
+  const winX=x!==undefined?x:50+(WM.windows.length%5)*26;
+  const winY=y!==undefined?y:50+(WM.windows.length%4)*26;
+  const pDef=PANELS.find(p=>p.id===type)||PANELS[0];
+  const id=WM.nextId++;
+  const el=document.createElement('div');
+  el.className='win'; el.dataset.winId=id;
+  el.style.cssText=`left:${winX}px;top:${winY}px;width:${winW}px;height:${winH}px;z-index:${++WM.zTop};`;
+  const selOpts=PANELS.map(p=>`<option value="${p.id}" ${p.id===type?'selected':''}>${p.icon} ${p.name}</option>`).join('');
+  el.innerHTML=`
+    <div class="win-title" data-drag="${id}">
+      <span class="win-icon">${pDef.icon}</span>
+      <select class="win-type-sel" onchange="changeWinType(${id},this.value)" onclick="event.stopPropagation()">${selOpts}</select>
+      <div class="wc">
+        <div class="wc-btn wc-min" onclick="toggleMin(${id})"></div>
+        <div class="wc-btn wc-max" onclick="toggleMax(${id})"></div>
+        <div class="wc-btn wc-close" onclick="closeWin(${id})"></div>
+      </div>
+    </div>
+    <div class="win-body" id="wb-${id}"></div>
+    <div class="win-resize" data-resize="${id}">
+      <svg viewBox="0 0 9 9" width="9" height="9"><line x1="3" y1="9" x2="9" y2="3" stroke="#4a6580" stroke-width="1.5"/><line x1="6" y1="9" x2="9" y2="6" stroke="#4a6580" stroke-width="1.5"/></svg>
+    </div>`;
+  ws.appendChild(el);
+  const winObj={id,type,el,ts:{scale:1,offX:0,offY:0,panX:0,panY:0,inited:false},lapFilter:'',prevGeom:null};
+  WM.windows.push(winObj);
+  focusWin(id);
+  renderWin(id);
+  if(type==='track'&&G.trackPts.length>0) setTimeout(()=>initDesktopTrack(id),60);
+  return winObj;
+}
+
+function focusWin(id){
+  WM.windows.forEach(w=>w.el.classList.remove('focused'));
+  const w=getWin(id); if(!w) return;
+  w.el.style.zIndex=++WM.zTop;
+  w.el.classList.add('focused');
+}
+
+function closeWin(id){
+  const w=getWin(id); if(!w) return;
+  w.el.remove(); WM.windows=WM.windows.filter(x=>x.id!==id);
+}
+
+function toggleMin(id){
+  const w=getWin(id); if(!w) return;
+  w.minimized=!w.minimized;
+  w.el.classList.toggle('minimized',w.minimized);
+}
+
+function toggleMax(id){
+  const w=getWin(id); if(!w) return;
+  const ws=document.getElementById('desk-workspace');
+  if(w.prevGeom){
+    const g=w.prevGeom;
+    w.el.style.left=g.l; w.el.style.top=g.t; w.el.style.width=g.w; w.el.style.height=g.h;
+    w.prevGeom=null;
+  } else {
+    w.prevGeom={l:w.el.style.left,t:w.el.style.top,w:w.el.style.width,h:w.el.style.height};
+    w.el.style.left='4px'; w.el.style.top='4px';
+    w.el.style.width=(ws.clientWidth-8)+'px'; w.el.style.height=(ws.clientHeight-8)+'px';
+    if(w.type==='track') setTimeout(()=>initDesktopTrack(id),60);
+  }
+  focusWin(id);
+}
+
+function changeWinType(id,type){
+  const w=getWin(id); if(!w) return;
+  w.type=type; w.ts.inited=false;
+  w.el.querySelector('.win-icon').textContent=PANELS.find(p=>p.id===type)?.icon||'';
+  renderWin(id);
+  if(type==='track'&&G.trackPts.length>0) setTimeout(()=>initDesktopTrack(id),60);
+}
+
+// Drag/resize
+const dws=document.getElementById('desk-workspace');
+dws.addEventListener('mousedown',e=>{
+  const dt=e.target.closest('[data-drag]');
+  const rt=e.target.closest('[data-resize]');
+  const we=e.target.closest('.win');
+  if(we) focusWin(parseInt(we.dataset.winId));
+  if(dt){
+    e.preventDefault();
+    const id=parseInt(dt.dataset.drag);
+    const w=getWin(id); if(!w) return;
+    const rect=w.el.getBoundingClientRect();
+    const wsr=dws.getBoundingClientRect();
+    WM.drag={id,sx:e.clientX,sy:e.clientY,ol:rect.left-wsr.left,ot:rect.top-wsr.top};
+  }
+  if(rt){
+    e.preventDefault();
+    const id=parseInt(rt.dataset.resize);
+    const w=getWin(id); if(!w) return;
+    WM.resize={id,sx:e.clientX,sy:e.clientY,ow:w.el.offsetWidth,oh:w.el.offsetHeight};
+  }
+});
+document.addEventListener('mousemove',e=>{
+  if(WM.drag){
+    const w=getWin(WM.drag.id); if(!w) return;
+    const wsr=dws.getBoundingClientRect();
+    w.el.style.left=Math.max(0,Math.min(wsr.width-100,WM.drag.ol+e.clientX-WM.drag.sx))+'px';
+    w.el.style.top=Math.max(0,Math.min(wsr.height-36,WM.drag.ot+e.clientY-WM.drag.sy))+'px';
+  }
+  if(WM.resize){
+    const w=getWin(WM.resize.id); if(!w) return;
+    w.el.style.width=Math.max(240,WM.resize.ow+e.clientX-WM.resize.sx)+'px';
+    w.el.style.height=Math.max(150,WM.resize.oh+e.clientY-WM.resize.sy)+'px';
+    if(w.type==='track'){ clearTimeout(w._rt); w._rt=setTimeout(()=>initDesktopTrack(w.id),80); }
+  }
+});
+document.addEventListener('mouseup',()=>{WM.drag=null;WM.resize=null;});
+
+// Touch drag (desktop too)
+dws.addEventListener('touchstart',e=>{
+  const dt=e.target.closest('[data-drag]'); if(!dt) return;
+  const id=parseInt(dt.dataset.drag); const w=getWin(id); if(!w) return;
+  focusWin(id);
+  const rect=w.el.getBoundingClientRect(),wsr=dws.getBoundingClientRect();
+  WM.drag={id,sx:e.touches[0].clientX,sy:e.touches[0].clientY,ol:rect.left-wsr.left,ot:rect.top-wsr.top};
+},{passive:true});
+document.addEventListener('touchmove',e=>{
+  if(!WM.drag) return;
+  const w=getWin(WM.drag.id); if(!w) return;
+  w.el.style.left=Math.max(0,WM.drag.ol+e.touches[0].clientX-WM.drag.sx)+'px';
+  w.el.style.top=Math.max(0,WM.drag.ot+e.touches[0].clientY-WM.drag.sy)+'px';
+},{passive:true});
+document.addEventListener('touchend',()=>{WM.drag=null;},{passive:true});
+
+// Tiling
+function tileWins(mode){
+  const vis=WM.windows.filter(w=>!w.minimized); if(!vis.length) return;
+  const ws=document.getElementById('desk-workspace');
+  const W=ws.clientWidth,H=ws.clientHeight,n=vis.length,pad=5;
+  if(mode==='grid'){
+    const cols=Math.ceil(Math.sqrt(n)),rows=Math.ceil(n/cols);
+    const tw=Math.floor((W-pad*(cols+1))/cols),th=Math.floor((H-pad*(rows+1))/rows);
+    vis.forEach((w,i)=>{
+      const c=i%cols,r=Math.floor(i/cols);
+      w.el.style.left=(pad+c*(tw+pad))+'px'; w.el.style.top=(pad+r*(th+pad))+'px';
+      w.el.style.width=tw+'px'; w.el.style.height=th+'px';
+    });
+  } else if(mode==='cols'){
+    const tw=Math.floor((W-pad*(n+1))/n);
+    vis.forEach((w,i)=>{ w.el.style.left=(pad+i*(tw+pad))+'px'; w.el.style.top=pad+'px'; w.el.style.width=tw+'px'; w.el.style.height=(H-pad*2)+'px'; });
+  } else if(mode==='rows'){
+    const th=Math.floor((H-pad*(n+1))/n);
+    vis.forEach((w,i)=>{ w.el.style.left=pad+'px'; w.el.style.top=(pad+i*(th+pad))+'px'; w.el.style.width=(W-pad*2)+'px'; w.el.style.height=th+'px'; });
+  }
+  vis.forEach(w=>{ if(w.type==='track') setTimeout(()=>initDesktopTrack(w.id),80); });
+}
+function cascadeWins(){
+  const vis=WM.windows.filter(w=>!w.minimized);
+  const ws=document.getElementById('desk-workspace');
+  const bW=Math.min(520,ws.clientWidth*.58),bH=Math.min(400,ws.clientHeight*.62);
+  vis.forEach((w,i)=>{ w.el.style.left=(18+i*30)+'px'; w.el.style.top=(18+i*30)+'px'; w.el.style.width=bW+'px'; w.el.style.height=bH+'px'; focusWin(w.id); });
+}
+
+// ═══════════════════════════════════════════
+//  DESKTOP TRACK PER-WINDOW
+// ═══════════════════════════════════════════
+function initDesktopTrack(id){
+  const w=getWin(id); if(!w||!G.trackPts.length) return;
+  const canvas=document.getElementById('tc-'+id); if(!canvas) return;
+  const wrap=canvas.closest('.track-wrap'); if(!wrap) return;
+  canvas.width=wrap.clientWidth; canvas.height=wrap.clientHeight;
+  initTrackTransform(canvas,w.ts);
+  const ov=document.getElementById('tov-'+id); if(ov) ov.style.display='none';
+  drawTrackOnCanvas(canvas,w.ts);
+  updateDesktopTrackLegend(id);
+}
+
+function updateDesktopTrackLegend(id){
+  const leg=document.getElementById('tleg-'+id); if(!leg) return;
+  const sorted=Object.values(G.driverLocs).sort((a,b)=>a.pos-b.pos);
+  leg.innerHTML=sorted.map(d=>`<div class="leg-item"><div class="leg-dot" style="background:${d.color};box-shadow:0 0 4px ${d.color}77;"></div>${d.abbr}</div>`).join('');
+}
+
+// ═══════════════════════════════════════════
+//  DESKTOP WINDOW RENDERERS
+// ═══════════════════════════════════════════
+function renderWin(id){
+  const w=getWin(id); if(!w) return;
+  const body=document.getElementById('wb-'+id); if(!body) return;
+  switch(w.type){
+    case 'timing':     renderDeskTiming(body); break;
+    case 'track':      renderDeskTrack(body,w); break;
+    case 'telemetry':  renderDeskTelemetry(body); break;
+    case 'standings':  renderDeskStandings(body); break;
+    case 'laps':       renderDeskLaps(body,w); break;
+    case 'pitstops':   renderDeskPits(body); break;
+    case 'weather':    renderDeskWeather(body); break;
+    case 'racecontrol':renderDeskRC(body); break;
+  }
+}
+
+function renderDeskTiming(body){ body.innerHTML='<div class="scr">'+buildTimingHtml()+'</div>'; }
+function buildTimingHtml(){
+  const pos=getLatestPos(); if(!pos.length) return noData('🏎','NO DATA','Load a session');
+  const bL={};
+  G.laps.forEach(l=>{if(l.lap_duration&&(!bL[l.driver_number]||l.lap_duration<bL[l.driver_number]))bL[l.driver_number]=l.lap_duration;});
+  const oB=Math.min(...Object.values(bL).filter(Boolean));
+  const cL={};
+  G.laps.forEach(l=>{if(!cL[l.driver_number]||l.lap_number>cL[l.driver_number].lap_number)cL[l.driver_number]=l;});
+  const lB=bL[pos[0]?.driver_number];
+  let html=`<table class="t-tbl"><thead><tr><th>POS</th><th>DRIVER</th><th>GAP</th><th>BEST</th><th>LAST</th><th>TY</th><th>LAP</th><th>DRS</th></tr></thead><tbody>`;
+  pos.forEach((p,i)=>{
+    const d=G.drivers[p.driver_number]||{},car=G.carData[p.driver_number]||{},ld=cL[p.driver_number]||{};
+    const best=bL[p.driver_number],isFast=best&&best===oB;
+    const pp=p.position,pc=pp===1?'g1':pp===2?'g2':pp===3?'g3':'';
+    const col=drvCol(d),gap=i===0?'LEAD':(lB&&best?'+'+((best-lB).toFixed(3))+'s':'—');
+    html+=`<tr><td><span class="pos ${pc}">${pp}</span></td>
+      <td><div style="display:flex;align-items:center;gap:5px;">
+        <span class="d-num" style="background:${col}22;color:${col};border:1px solid ${col}44;">${p.driver_number}</span>
+        <span class="d-name">${d.last_name||d.full_name||'DRV'}</span>
+        <span class="d-abbr" style="color:${col};">${d.name_acronym||''}</span>
+      </div></td>
+      <td class="dim">${gap}</td>
+      <td class="${isFast?'fastest':'dim'}">${best?fmtT(best):'—'}${isFast?' ◆':''}</td>
+      <td class="dim">${ld.lap_duration?fmtT(ld.lap_duration):'—'}</td>
+      <td>${getTyre(p.driver_number)}</td>
+      <td class="dim">${ld.lap_number||'—'}</td>
+      <td>${(car.drs||0)>=10?'<span class="drs-on">DRS</span>':'<span class="dim">—</span>'}</td>
+    </tr>`;
+  });
+  return html+'</tbody></table>';
+}
+
+function renderDeskTrack(body,win){
+  if(!body.querySelector('.track-wrap')){
+    body.innerHTML=`<div class="track-wrap">
+      <canvas class="t-canvas" id="tc-${win.id}"></canvas>
+      <div class="track-ctrl-btns">
+        <div class="t-zbtn" onclick="trackZoomWin(${win.id},1.2)">+</div>
+        <div class="t-zbtn" onclick="trackZoomWin(${win.id},0.8)">−</div>
+        <div class="t-zbtn" onclick="trackResetWin(${win.id})">↺</div>
+      </div>
+      <div class="track-loading-ov" id="tov-${win.id}">
+        <div class="loader"></div>
+        <div class="track-load-t">${G.sessionKey?'LOADING GPS…':'LOAD A SESSION'}</div>
+      </div>
+      <div class="t-legend" id="tleg-${win.id}"></div>
+    </div>`;
+    // Wire wheel zoom
+    const canvas=document.getElementById('tc-'+win.id);
+    canvas.addEventListener('wheel',e=>{
+      e.preventDefault();
+      const f=e.deltaY<0?1.1:0.9;
+      const rect=canvas.getBoundingClientRect();
+      const ts=win.ts;
+      ts.offX=(e.clientX-rect.left)+(ts.offX-(e.clientX-rect.left))*f;
+      ts.offY=(e.clientY-rect.top)+(ts.offY-(e.clientY-rect.top))*f;
+      ts.scale*=f;
+      drawTrackOnCanvas(canvas,ts);
+    },{passive:false});
+    // Canvas drag
+    let isd=false,dx=0,dy=0;
+    canvas.addEventListener('mousedown',e=>{isd=true;dx=e.clientX;dy=e.clientY;e.stopPropagation();});
+    document.addEventListener('mousemove',e=>{
+      if(!isd) return;
+      win.ts.panX+=e.clientX-dx; win.ts.panY+=e.clientY-dy;
+      dx=e.clientX; dy=e.clientY;
+      drawTrackOnCanvas(canvas,win.ts);
+    });
+    document.addEventListener('mouseup',()=>{isd=false;});
+  }
+  if(G.trackPts.length>0) setTimeout(()=>initDesktopTrack(win.id),40);
+}
+
+function trackZoomWin(id,f){
+  const w=getWin(id); if(!w) return;
+  const c=document.getElementById('tc-'+id); if(!c) return;
+  const cx=c.width/2,cy=c.height/2;
+  w.ts.offX=cx+(w.ts.offX-cx)*f; w.ts.offY=cy+(w.ts.offY-cy)*f; w.ts.scale*=f;
+  drawTrackOnCanvas(c,w.ts);
+}
+function trackResetWin(id){ const w=getWin(id); if(w){w.ts.inited=false;initDesktopTrack(id);} }
+
+function renderDeskTelemetry(body){
+  const pos=getLatestPos();
+  if(!pos.length){body.innerHTML=noData('📊','NO DATA');return;}
+  let html='<div class="scr"><div class="telem-grid">';
+  pos.forEach(p=>{
+    const d=G.drivers[p.driver_number]||{},car=G.carData[p.driver_number]||{};
+    const col=drvCol(d),position=p.position;
+    const dlaps=G.laps.filter(l=>l.driver_number===p.driver_number&&l.lap_duration);
+    const best=dlaps.length?Math.min(...dlaps.map(l=>l.lap_duration)):null;
+    const thr=car.throttle||0,brk=car.brake||0,gear=car.n_gear||0,rpm=car.rpm||0,spd=car.speed||0,drs=(car.drs||0)>=10;
+    html+=`<div class="d-card">
+      <div class="d-card-hdr" style="border-left:3px solid ${col};">
+        <div class="d-card-num" style="color:${col};">${p.driver_number}</div>
+        <div class="d-card-info"><div class="d-card-name">${d.last_name||'DRV'}</div><div class="d-card-team" style="color:${col}88;">${d.team_name||'—'}</div></div>
+        <div class="d-card-pos ${position===1?'g1':''}">P${position}</div>
+      </div>
+      <div class="bars">
+        <div class="bar-row"><div class="bar-lbl"><span>THROTTLE</span><span class="bar-val">${thr}%</span></div><div class="bar-track"><div class="bar-fill bt" style="width:${thr}%"></div></div></div>
+        <div class="bar-row"><div class="bar-lbl"><span>BRAKE</span><span class="bar-val">${brk}%</span></div><div class="bar-track"><div class="bar-fill bb" style="width:${brk}%"></div></div></div>
+        <div class="bar-row"><div class="bar-lbl"><span>GEAR</span><span class="bar-val">${gear}/8</span></div><div class="bar-track"><div class="bar-fill bg" style="width:${(gear/8)*100}%"></div></div></div>
+        <div class="bar-row"><div class="bar-lbl"><span>RPM</span><span class="bar-val">${rpm.toLocaleString()}</span></div><div class="bar-track"><div class="bar-fill br" style="width:${Math.min((rpm/15000)*100,100)}%"></div></div></div>
+      </div>
+      <div class="d-stats">
+        <div class="s-box"><div class="s-val">${spd}</div><div class="s-lbl">KM/H</div></div>
+        <div class="s-box"><div class="s-val">${best?fmtT(best):'—'}</div><div class="s-lbl">BEST</div></div>
+        <div class="s-box"><div class="s-val" style="color:${drs?'var(--green)':''}">${drs?'ON':'OFF'}</div><div class="s-lbl">DRS</div></div>
+        <div class="s-box"><div class="s-val">${dlaps.length}</div><div class="s-lbl">LAPS</div></div>
+        <div class="s-box"><div class="s-val">${d.name_acronym||'—'}</div><div class="s-lbl">CODE</div></div>
+        <div class="s-box"><div class="s-val">${G.pits.filter(pt=>pt.driver_number===p.driver_number).length}</div><div class="s-lbl">STOPS</div></div>
+      </div>
+    </div>`;
+  });
+  body.innerHTML=html+'</div></div>';
+}
+
+function renderDeskStandings(body){
+  if(!G.driverStandings.length&&!G.teamStandings.length){body.innerHTML=noData('📭','NOT AVAILABLE','Load a race session');return;}
+  let html='<div class="scr">';
+  if(G.driverStandings.length){
+    const mx=Math.max(...G.driverStandings.map(d=>d.points||0));
+    html+=`<div class="section-hdr">DRIVER CHAMPIONSHIP</div>`;
+    html+=G.driverStandings.sort((a,b)=>(a.position||99)-(b.position||99)).map(s=>{
+      const d=G.drivers[s.driver_number]||{},col=drvCol(d),pp=s.position,pc=pp===1?'g1':pp===2?'g2':pp===3?'g3':'';
+      return `<div class="stand-row"><span class="pos ${pc}">${pp}</span>
+        <span class="d-num" style="background:${col}22;color:${col};border:1px solid ${col}44;padding:1px 5px;border-radius:2px;font-family:'Orbitron',monospace;font-size:.62rem;">${d.name_acronym||'DRV'}</span>
+        <span class="d-name" style="flex:1;">${d.last_name||'#'+s.driver_number}</span>
+        <div class="pts-track"><div class="pts-fill" style="width:${mx?(s.points/mx)*100:0}%"></div></div>
+        <span class="pts-val">${s.points}</span></div>`;
+    }).join('');
+  }
+  if(G.teamStandings.length){
+    const mx=Math.max(...G.teamStandings.map(t=>t.points||0));
+    html+=`<div class="section-hdr" style="margin-top:8px;">CONSTRUCTOR CHAMPIONSHIP</div>`;
+    html+=G.teamStandings.sort((a,b)=>(a.position||99)-(b.position||99)).map(s=>{
+      const col=teamCol(s.team_name),pp=s.position,pc=pp===1?'g1':pp===2?'g2':pp===3?'g3':'';
+      return `<div class="stand-row"><span class="pos ${pc}">${pp}</span>
+        <div style="width:8px;height:8px;border-radius:50%;background:${col};flex-shrink:0;"></div>
+        <span class="d-name" style="flex:1;">${s.team_name||'Team'}</span>
+        <div class="pts-track"><div class="pts-fill" style="width:${mx?(s.points/mx)*100:0}%;background:linear-gradient(90deg,${col},${col}88);"></div></div>
+        <span class="pts-val">${s.points}</span></div>`;
+    }).join('');
+  }
+  body.innerHTML=html+'</div>';
+}
+
+function renderDeskLaps(body,win){
+  if(!G.laps.length){body.innerHTML=noData('⏱','NO LAP DATA');return;}
+  const drivers=[...new Set(G.laps.map(l=>l.driver_number))];
+  const selOpts='<option value="">All</option>'+drivers.map(n=>{
+    const d=G.drivers[n]||{};
+    return `<option value="${n}" ${win.lapFilter==n?'selected':''}>${(d.name_acronym||'DRV')} #${n}</option>`;
+  }).join('');
+  const filt=win.lapFilter;
+  let laps=G.laps.filter(l=>!filt||l.driver_number==filt).sort((a,b)=>a.driver_number-b.driver_number||a.lap_number-b.lap_number);
+  const fastest=Math.min(...laps.filter(l=>l.lap_duration).map(l=>l.lap_duration));
+  let html=`<div style="display:flex;flex-direction:column;height:100%;">
+    <div class="lap-filter-bar">
+      <span style="font-family:'Orbitron',monospace;font-size:.58rem;letter-spacing:.12em;color:var(--dim);">DRIVER</span>
+      <select class="drv-sel" onchange="setDeskLapFilter(${win.id},this.value)">${selOpts}</select>
+    </div>
+    <div class="scr" style="flex:1;"><table class="t-tbl"><thead><tr>
+      <th>DRV</th><th>LAP</th><th>TIME</th><th>S1</th><th>S2</th><th>S3</th><th>V MAX</th>
+    </tr></thead><tbody>`;
+  laps.forEach(l=>{
+    const d=G.drivers[l.driver_number]||{},col=drvCol(d);
+    const isFast=l.lap_duration&&l.lap_duration===fastest;
+    html+=`<tr><td><div style="display:flex;align-items:center;gap:4px;">
+      <span style="width:5px;height:5px;border-radius:50%;background:${col};display:inline-block;flex-shrink:0;"></span>
+      <span class="d-abbr" style="color:${col};">${d.name_acronym||'?'}</span>
+    </div></td>
+    <td class="dim">${l.lap_number}</td>
+    <td class="${isFast?'fastest':'dim'}">${l.lap_duration?fmtT(l.lap_duration):'—'}${isFast?' ◆':''}</td>
+    <td class="dim" style="font-size:.65rem;">${l.duration_sector_1?fmtT(l.duration_sector_1):'—'}</td>
+    <td class="dim" style="font-size:.65rem;">${l.duration_sector_2?fmtT(l.duration_sector_2):'—'}</td>
+    <td class="dim" style="font-size:.65rem;">${l.duration_sector_3?fmtT(l.duration_sector_3):'—'}</td>
+    <td class="dim">${l.st_speed?l.st_speed+'km/h':'—'}</td></tr>`;
+  });
+  body.innerHTML=html+'</tbody></table></div></div>';
+}
+function setDeskLapFilter(id,val){ const w=getWin(id); if(w){w.lapFilter=val;renderWin(id);} }
+
+function renderDeskPits(body){
+  if(!G.pits.length){body.innerHTML=noData('🔧','NO PIT DATA');return;}
+  let html='<div class="scr"><table class="t-tbl"><thead><tr><th>DRIVER</th><th>LAP</th><th>DURATION</th><th>COMPOUND</th></tr></thead><tbody>';
+  [...G.pits].sort((a,b)=>a.lap_number-b.lap_number).forEach(p=>{
+    const d=G.drivers[p.driver_number]||{},col=drvCol(d),c=p.tyre_compound;
+    html+=`<tr><td><div style="display:flex;align-items:center;gap:5px;">
+      <span style="width:6px;height:6px;border-radius:50%;background:${col};display:inline-block;flex-shrink:0;"></span>
+      <span class="d-abbr" style="color:${col};">${d.name_acronym||'?'}</span>
+      <span class="dim" style="font-size:.65rem;">${d.last_name||'#'+p.driver_number}</span>
+    </div></td>
+    <td style="font-family:'Orbitron',monospace;font-size:.72rem;color:var(--cyan);">L${p.lap_number||'?'}</td>
+    <td style="font-family:'Share Tech Mono';color:var(--gold);">${p.pit_duration?p.pit_duration.toFixed(1)+'s':'—'}</td>
+    <td>${c?`<span class="tyre tyre-${c.toLowerCase()}">${c[0]}</span> <span class="dim" style="font-size:.65rem;">${c}</span>`:'—'}</td></tr>`;
+  });
+  body.innerHTML=html+'</tbody></table></div>';
+}
+
+function renderDeskWeather(body){
+  const w=G.weather[G.weather.length-1];
+  if(!w){body.innerHTML=noData('🌤','NO WEATHER DATA');return;}
+  const boxes=[
+    {icon:'🌡',lbl:'AIR TEMP',val:(w.air_temperature||'—')+'°C',col:'#ff8060'},
+    {icon:'🏎',lbl:'TRACK',val:(w.track_temperature||'—')+'°C',col:'#ff4500'},
+    {icon:'💨',lbl:'WIND',val:(w.wind_speed||'—')+' m/s',col:'#00cfff'},
+    {icon:'🧭',lbl:'DIR',val:(w.wind_direction||'—')+'°',col:'#7a9ab0'},
+    {icon:'💧',lbl:'HUMIDITY',val:(w.humidity||'—')+'%',col:'#00cfff'},
+    {icon:'🌧',lbl:'RAIN',val:w.rainfall?'YES':'NO',col:w.rainfall?'#00cfff':'#4a6580'},
+    {icon:'📊',lbl:'PRESSURE',val:(w.pressure||'—')+' mb',col:'#c77dff'},
+  ];
+  let html=`<div class="scr"><div style="padding:8px 12px;font-size:.62rem;color:var(--dim);font-family:'Share Tech Mono';">LAST: ${w.date?new Date(w.date).toLocaleTimeString():'—'}</div><div class="wx-grid">`;
+  html+=boxes.map(b=>`<div class="wx-box"><div class="wx-icon">${b.icon}</div><div class="wx-lbl">${b.lbl}</div><div class="wx-val" style="color:${b.col};">${b.val}</div></div>`).join('');
+  body.innerHTML=html+'</div></div>';
+}
+
+function renderDeskRC(body){
+  if(!G.raceControl.length){body.innerHTML=noData('📻','NO MESSAGES');return;}
+  const FE={'GREEN':'🟢','YELLOW':'🟡','RED':'🔴','SAFETY CAR':'🚗','VIRTUAL SAFETY CAR':'🟡','CHEQUERED':'🏁','BLUE':'🔵'};
+  let html='<div class="scr">';
+  html+=[...G.raceControl].sort((a,b)=>b.date>a.date?1:-1).map(rc=>{
+    const cat=(rc.category||'info').toLowerCase();
+    const cc=cat.includes('flag')?'rc-flag':cat.includes('incident')?'rc-inc':'rc-info';
+    const fe=rc.flag?(FE[rc.flag]||'🚩'):'';
+    return `<div class="rc-item">
+      <div class="rc-time">${rc.date?new Date(rc.date).toLocaleTimeString():'—'}</div>
+      <div style="flex:1;">
+        <div style="display:flex;gap:5px;align-items:center;margin-bottom:3px;">
+          <span class="rc-cat ${cc}">${rc.category||'INFO'}</span>
+          ${fe?`<span style="font-size:.85rem;">${fe}</span>`:''}`
+          +(rc.flag?`<span style="font-size:.58rem;color:var(--dim);">${rc.flag}</span>`:'')
+        +`</div>
+        <div class="rc-msg">${rc.message||'—'}</div>
+        ${rc.driver_number?`<div style="font-size:.6rem;color:var(--dim);margin-top:2px;">Drv #${rc.driver_number}${rc.lap_number?' · L'+rc.lap_number:''}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+  body.innerHTML=html+'</div>';
+}
+
+// ═══════════════════════════════════════════
+//  LAYOUT POSITIONING
+// ═══════════════════════════════════════════
+function setMobWorkspaceTop(){
+  const tb=document.getElementById('topbar');
+  const ws=document.getElementById('mob-workspace');
+  if(!ws) return;
+  const tbH=tb.offsetHeight;
+  const navH=document.getElementById('mob-nav').offsetHeight;
+  ws.style.top=tbH+'px';
+  ws.style.bottom=navH+'px';
+}
+
+function setDeskWorkspaceTop(){
+  const tb=document.getElementById('topbar');
+  const ws=document.getElementById('desk-workspace');
+  if(!ws) return;
+  ws.style.top=tb.offsetHeight+'px';
+}
+
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
+buildPicker();
+loadSessions();
+
+window.addEventListener('load',()=>{
+  setMobWorkspaceTop();
+  setDeskWorkspaceTop();
+
+  if(!IS_MOBILE()){
+    const ws=document.getElementById('desk-workspace');
+    const W=ws.clientWidth, H=ws.clientHeight, pad=5;
+    const hw=Math.floor((W-pad*3)/2), hh=Math.floor((H-pad*3)/2);
+    spawnWin('timing',   pad,         pad,         hw, hh);
+    spawnWin('track',    hw+pad*2,    pad,         hw, hh);
+    spawnWin('telemetry',pad,         hh+pad*2,    hw, hh);
+    spawnWin('weather',  hw+pad*2,    hh+pad*2,    hw, hh);
+  }
+});
+
+window.addEventListener('resize',()=>{
+  setMobWorkspaceTop();
+  setDeskWorkspaceTop();
+});
+</script>
+</body>
+</html>
