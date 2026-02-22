@@ -1,0 +1,1739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>F1 LIVE // OpenF1 Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #030508;
+    --surface: #080d14;
+    --surface2: #0d1520;
+    --border: #1a2535;
+    --accent: #e8001f;
+    --accent2: #ff4d1c;
+    --gold: #f5a623;
+    --cyan: #00d4ff;
+    --green: #00ff88;
+    --text: #e8edf5;
+    --text-dim: #5a7090;
+    --text-mid: #8aabb0;
+    --glow: rgba(232,0,31,0.4);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 15% 50%, rgba(232,0,31,0.04) 0%, transparent 60%),
+      radial-gradient(ellipse at 85% 20%, rgba(0,212,255,0.03) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* HEADER */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(3,5,8,0.95);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 56px;
+  }
+
+  .logo {
+    font-family: 'Orbitron', monospace;
+    font-weight: 900;
+    font-size: 1.1rem;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    text-shadow: 0 0 20px var(--glow);
+    white-space: nowrap;
+  }
+
+  .logo span { color: var(--text-dim); font-weight: 400; font-size: 0.7rem; display: block; letter-spacing: 0.3em; }
+
+  .header-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(232,0,31,0.12);
+    border: 1px solid rgba(232,0,31,0.4);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+  }
+
+  .live-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(232,0,31,0.6); }
+    50% { opacity: 0.6; box-shadow: 0 0 0 5px transparent; }
+  }
+
+  .refresh-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-mid);
+    padding: 6px 14px;
+    border-radius: 4px;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    font-size: 0.8rem;
+    cursor: pointer;
+    letter-spacing: 0.08em;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .refresh-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+  .refresh-btn.spinning { animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* SESSION SELECTOR */
+  .session-bar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .session-bar label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .session-bar select, .session-bar input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.2s;
+    min-width: 80px;
+  }
+
+  .session-bar select:focus, .session-bar input:focus { border-color: var(--cyan); }
+  .session-bar select option { background: #0d1520; }
+
+  .load-btn {
+    background: var(--accent);
+    border: none;
+    color: white;
+    padding: 6px 18px;
+    border-radius: 4px;
+    font-family: 'Orbitron', monospace;
+    font-weight: 700;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+  .load-btn:hover { background: var(--accent2); box-shadow: 0 0 20px var(--glow); }
+
+  /* NAV TABS */
+  nav {
+    display: flex;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  nav::-webkit-scrollbar { display: none; }
+
+  .tab {
+    padding: 12px 20px;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    color: var(--text-dim);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* MAIN LAYOUT */
+  main { padding: 16px; position: relative; z-index: 1; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* CARDS */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+
+  .card-header {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(0,0,0,0.2);
+  }
+
+  .card-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+
+  .card-badge {
+    margin-left: auto;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--cyan);
+    letter-spacing: 0.1em;
+  }
+
+  /* TRACK MAP */
+  #track-canvas-container {
+    position: relative;
+    background: var(--surface2);
+    min-height: 320px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #track-canvas {
+    width: 100%;
+    max-height: 400px;
+    display: block;
+  }
+
+  .track-legend {
+    padding: 12px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    border-top: 1px solid var(--border);
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    color: var(--text-mid);
+    font-weight: 600;
+  }
+
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+  }
+
+  /* TIMING TABLE */
+  .timing-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.8rem;
+  }
+
+  .timing-table th {
+    padding: 8px 12px;
+    text-align: left;
+    color: var(--text-dim);
+    font-size: 0.62rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    background: rgba(0,0,0,0.15);
+    white-space: nowrap;
+  }
+
+  .timing-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(26,37,53,0.5);
+    vertical-align: middle;
+  }
+
+  .timing-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .timing-table tr.leader td { background: rgba(245,166,35,0.05); }
+
+  .pos-num {
+    font-family: 'Orbitron', monospace;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--text-mid);
+    min-width: 28px;
+    display: inline-block;
+  }
+
+  .pos-num.p1 { color: var(--gold); }
+  .pos-num.p2 { color: #c0c0c0; }
+  .pos-num.p3 { color: #cd7f32; }
+
+  .driver-num {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 3px;
+    font-weight: 700;
+    font-size: 0.8rem;
+    min-width: 32px;
+    text-align: center;
+  }
+
+  .driver-name {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text);
+    letter-spacing: 0.05em;
+  }
+
+  .driver-abbr {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+  }
+
+  .gap-text { color: var(--text-dim); }
+  .gap-text.best { color: var(--green); }
+  .gap-text.sector { font-size: 0.72rem; }
+
+  .drs-on {
+    background: rgba(0,255,136,0.15);
+    color: var(--green);
+    border: 1px solid rgba(0,255,136,0.3);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+  }
+
+  .drs-off {
+    color: var(--text-dim);
+    font-size: 0.6rem;
+  }
+
+  /* TELEMETRY */
+  .telemetry-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .driver-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.15s;
+  }
+  .driver-card:hover { border-color: rgba(0,212,255,0.4); transform: translateY(-1px); }
+  .driver-card.selected { border-color: var(--cyan); }
+
+  .driver-card-header {
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .driver-card-num {
+    font-family: 'Orbitron', monospace;
+    font-weight: 900;
+    font-size: 1.3rem;
+  }
+
+  .driver-card-info { flex: 1; }
+  .driver-card-name { font-weight: 700; font-size: 1rem; letter-spacing: 0.03em; }
+  .driver-card-team { font-size: 0.75rem; color: var(--text-dim); letter-spacing: 0.05em; }
+
+  .driver-card-pos {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: var(--text-dim);
+  }
+  .driver-card-pos.p1 { color: var(--gold); }
+
+  .telem-bars { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+
+  .telem-row { display: flex; flex-direction: column; gap: 3px; }
+
+  .telem-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  .telem-val { color: var(--text); font-weight: 600; }
+
+  .bar-track {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.6s ease;
+  }
+
+  .bar-throttle { background: linear-gradient(90deg, var(--green), #00ff88aa); }
+  .bar-brake { background: linear-gradient(90deg, var(--accent), #ff4d1c); }
+  .bar-gear { background: linear-gradient(90deg, var(--cyan), #00d4ffaa); }
+  .bar-rpm { background: linear-gradient(90deg, var(--gold), var(--accent2)); }
+
+  .telem-stats {
+    padding: 0 14px 12px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px;
+  }
+
+  .stat-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 6px 8px;
+    text-align: center;
+  }
+
+  .stat-val {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .stat-lbl {
+    font-size: 0.58rem;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  /* STANDINGS */
+  .standings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 700px) {
+    .standings-grid { grid-template-columns: 1fr; }
+  }
+
+  .standings-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+  .standings-row:hover { background: rgba(255,255,255,0.02); }
+
+  .points-bar-track {
+    flex: 1;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .points-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--gold));
+  }
+
+  .points-val {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--gold);
+    min-width: 45px;
+    text-align: right;
+  }
+
+  /* WEATHER */
+  .weather-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 10px;
+    padding: 16px;
+  }
+
+  .weather-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px;
+    text-align: center;
+  }
+
+  .weather-icon { font-size: 1.8rem; margin-bottom: 4px; }
+  .weather-label { font-size: 0.62rem; color: var(--text-dim); letter-spacing: 0.12em; text-transform: uppercase; }
+  .weather-value { font-family: 'Orbitron', monospace; font-size: 1.1rem; font-weight: 700; margin-top: 2px; }
+
+  /* STATUS BAR */
+  .status-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(3,5,8,0.97);
+    border-top: 1px solid var(--border);
+    padding: 6px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--text-dim);
+    z-index: 100;
+  }
+
+  .status-text { flex: 1; }
+  .status-text.error { color: var(--accent); }
+  .status-text.ok { color: var(--green); }
+
+  /* SCROLLABLE */
+  .table-scroll { overflow-x: auto; }
+
+  /* LOADING */
+  .loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    gap: 14px;
+    color: var(--text-dim);
+  }
+
+  .loader {
+    width: 36px; height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  .loading-text {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    color: var(--text-dim);
+  }
+
+  /* EMPTY */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 60px 20px;
+    gap: 10px;
+    color: var(--text-dim);
+    text-align: center;
+  }
+
+  .empty-icon { font-size: 2.5rem; opacity: 0.3; }
+  .empty-title { font-family: 'Orbitron', monospace; font-size: 0.8rem; letter-spacing: 0.15em; }
+  .empty-sub { font-size: 0.85rem; max-width: 300px; line-height: 1.5; }
+
+  /* RACE CONTROL */
+  .rc-feed { max-height: 400px; overflow-y: auto; }
+
+  .rc-item {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .rc-time {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--text-dim);
+    white-space: nowrap;
+    margin-top: 2px;
+  }
+
+  .rc-msg { font-size: 0.85rem; line-height: 1.4; }
+  .rc-cat {
+    font-size: 0.6rem;
+    padding: 2px 6px;
+    border-radius: 3px;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
+  .rc-cat.flag { background: rgba(245,166,35,0.2); color: var(--gold); border: 1px solid rgba(245,166,35,0.3); }
+  .rc-cat.incident { background: rgba(232,0,31,0.15); color: var(--accent); border: 1px solid rgba(232,0,31,0.3); }
+  .rc-cat.info { background: rgba(0,212,255,0.1); color: var(--cyan); border: 1px solid rgba(0,212,255,0.2); }
+
+  /* LAP CHARTS */
+  .chart-area {
+    padding: 16px;
+    height: 200px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  canvas.chart { width: 100%; height: 100%; }
+
+  /* PIT STOPS */
+  .pit-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.85rem;
+  }
+
+  .pit-lap { font-family: 'Orbitron', monospace; font-size: 0.8rem; color: var(--cyan); min-width: 50px; }
+  .pit-dur { font-family: 'Share Tech Mono', monospace; color: var(--gold); }
+
+  /* RESPONSIVE */
+  @media (max-width: 600px) {
+    header { padding: 0 10px; }
+    .logo { font-size: 0.9rem; }
+    main { padding: 10px; }
+    .telemetry-grid { grid-template-columns: 1fr; padding: 10px; }
+    .tab { padding: 10px 14px; font-size: 0.58rem; }
+  }
+
+  /* Sector colors */
+  .s-purple { color: #c77dff; }
+  .s-green { color: var(--green); }
+  .s-yellow { color: var(--gold); }
+
+  /* Tyre compounds */
+  .tyre {
+    display: inline-block;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    font-size: 0.55rem;
+    font-weight: 900;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .tyre-soft { background: var(--accent); color: white; }
+  .tyre-medium { background: var(--gold); color: #000; }
+  .tyre-hard { background: #ddd; color: #000; }
+  .tyre-inter { background: var(--green); color: #000; }
+  .tyre-wet { background: var(--cyan); color: #000; }
+  .tyre-unknown { background: var(--surface2); color: var(--text-dim); border: 1px solid var(--border); }
+
+  /* Auto-refresh badge */
+  .auto-badge {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+  }
+
+  /* Scrollbars */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* Track map styling */
+  .track-info-panel {
+    padding: 10px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 0.8rem;
+  }
+  .track-stat { display: flex; gap: 6px; align-items: center; }
+  .track-stat-lbl { color: var(--text-dim); font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; }
+
+  .bottom-pad { height: 40px; }
+
+  /* Highlight fastest */
+  .fastest { color: #c77dff !important; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    F1 LIVE
+    <span>OPENF1 DASHBOARD</span>
+  </div>
+  <div class="header-right">
+    <div class="live-badge" id="live-badge">
+      <div class="live-dot"></div>
+      LIVE
+    </div>
+    <button class="refresh-btn" id="refresh-btn" onclick="refreshData()">↻ REFRESH</button>
+  </div>
+</header>
+
+<div class="session-bar">
+  <label>YEAR</label>
+  <select id="sel-year">
+    <option value="2025">2025</option>
+    <option value="2024">2024</option>
+    <option value="2023">2023</option>
+    <option value="2022">2022</option>
+  </select>
+  <label>SESSION</label>
+  <select id="sel-session" style="min-width:160px;">
+    <option value="">Select year first...</option>
+  </select>
+  <button class="load-btn" onclick="loadSession()">LOAD SESSION</button>
+  <span class="auto-badge" id="auto-timer"></span>
+</div>
+
+<nav>
+  <div class="tab active" onclick="showTab('timing')">🏁 TIMING</div>
+  <div class="tab" onclick="showTab('track')">🗺 TRACK MAP</div>
+  <div class="tab" onclick="showTab('telemetry')">📊 TELEMETRY</div>
+  <div class="tab" onclick="showTab('standings')">🏆 STANDINGS</div>
+  <div class="tab" onclick="showTab('laps')">⏱ LAPS</div>
+  <div class="tab" onclick="showTab('pitstops')">🔧 PIT STOPS</div>
+  <div class="tab" onclick="showTab('weather')">🌤 WEATHER</div>
+  <div class="tab" onclick="showTab('racecontrol')">📻 RACE CTRL</div>
+</nav>
+
+<main>
+
+  <!-- TIMING TOWER -->
+  <div class="panel active" id="panel-timing">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">TIMING TOWER</div>
+        <div class="card-badge" id="timing-badge">—</div>
+      </div>
+      <div class="table-scroll" id="timing-content">
+        <div class="empty-state">
+          <div class="empty-icon">🏎</div>
+          <div class="empty-title">NO SESSION LOADED</div>
+          <div class="empty-sub">Select a year, choose a session, and hit LOAD SESSION to begin</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRACK MAP -->
+  <div class="panel" id="panel-track">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">TRACK MAP — LIVE POSITIONS</div>
+        <div class="card-badge" id="track-badge">—</div>
+      </div>
+      <div id="track-canvas-container">
+        <div class="empty-state" id="track-empty">
+          <div class="empty-icon">🗺</div>
+          <div class="empty-title">LOAD A SESSION</div>
+          <div class="empty-sub">Driver positions will appear on the track layout once session data is loaded</div>
+        </div>
+        <canvas id="track-canvas" style="display:none;"></canvas>
+      </div>
+      <div class="track-legend" id="track-legend"></div>
+    </div>
+  </div>
+
+  <!-- TELEMETRY -->
+  <div class="panel" id="panel-telemetry">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">CAR TELEMETRY</div>
+        <div class="card-badge">~3.7 Hz SAMPLE RATE</div>
+      </div>
+      <div id="telemetry-content">
+        <div class="empty-state">
+          <div class="empty-icon">📊</div>
+          <div class="empty-title">NO DATA</div>
+          <div class="empty-sub">Load a session to see real-time car telemetry data</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STANDINGS -->
+  <div class="panel" id="panel-standings">
+    <div class="standings-grid">
+      <div class="card">
+        <div class="card-header"><div class="card-title">DRIVER CHAMPIONSHIP</div></div>
+        <div id="driver-standings-content">
+          <div class="empty-state" style="padding:30px 20px;">
+            <div class="empty-icon">🏆</div>
+            <div class="empty-title">LOAD A RACE SESSION</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">CONSTRUCTOR CHAMPIONSHIP</div></div>
+        <div id="team-standings-content">
+          <div class="empty-state" style="padding:30px 20px;">
+            <div class="empty-icon">🏎</div>
+            <div class="empty-title">LOAD A RACE SESSION</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LAPS -->
+  <div class="panel" id="panel-laps">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">LAP TIMES</div>
+        <select id="lap-driver-sel" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:3px 8px;border-radius:4px;font-family:'Rajdhani',sans-serif;font-size:0.8rem;outline:none;" onchange="renderLaps()">
+          <option value="">All drivers</option>
+        </select>
+      </div>
+      <div class="table-scroll" id="laps-content">
+        <div class="empty-state">
+          <div class="empty-icon">⏱</div>
+          <div class="empty-title">NO LAP DATA</div>
+          <div class="empty-sub">Load a session to view lap times and sector data</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PIT STOPS -->
+  <div class="panel" id="panel-pitstops">
+    <div class="card">
+      <div class="card-header"><div class="card-title">PIT STOP HISTORY</div></div>
+      <div id="pitstops-content">
+        <div class="empty-state">
+          <div class="empty-icon">🔧</div>
+          <div class="empty-title">NO PIT DATA</div>
+          <div class="empty-sub">Load a session to view pit stop information</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEATHER -->
+  <div class="panel" id="panel-weather">
+    <div class="card">
+      <div class="card-header"><div class="card-title">TRACKSIDE WEATHER</div></div>
+      <div id="weather-content">
+        <div class="empty-state">
+          <div class="empty-icon">🌤</div>
+          <div class="empty-title">NO WEATHER DATA</div>
+          <div class="empty-sub">Load a session to view weather conditions</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RACE CONTROL -->
+  <div class="panel" id="panel-racecontrol">
+    <div class="card">
+      <div class="card-header"><div class="card-title">RACE CONTROL MESSAGES</div></div>
+      <div class="rc-feed" id="racecontrol-content">
+        <div class="empty-state">
+          <div class="empty-icon">📻</div>
+          <div class="empty-title">NO MESSAGES</div>
+          <div class="empty-sub">Load a session to view race control messages and flags</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<div class="bottom-pad"></div>
+
+<div class="status-bar">
+  <div class="status-text" id="status-text">Ready. Select a session to begin.</div>
+  <div id="last-update"></div>
+</div>
+
+<script>
+const API = 'https://api.openf1.org/v1';
+
+// State
+let state = {
+  sessionKey: null,
+  meetingKey: null,
+  drivers: {},
+  positions: [],
+  carData: {},
+  laps: [],
+  pits: [],
+  weather: [],
+  raceControl: [],
+  driverStandings: [],
+  teamStandings: [],
+  sessions: [],
+  autoRefresh: null,
+  currentTab: 'timing',
+};
+
+// Team colors
+const TEAM_COLORS = {
+  'Red Bull Racing': '#3671C6',
+  'Ferrari': '#E8001F',
+  'Mercedes': '#27F4D2',
+  'McLaren': '#FF8000',
+  'Aston Martin': '#358C75',
+  'Alpine': '#FF87BC',
+  'Williams': '#64C4FF',
+  'RB': '#6692FF',
+  'Haas F1 Team': '#B6BABD',
+  'Kick Sauber': '#52E252',
+};
+
+const TEAM_ABBRS = {
+  'Red Bull Racing': 'RBR',
+  'Ferrari': 'FER',
+  'Mercedes': 'MER',
+  'McLaren': 'MCL',
+  'Aston Martin': 'AMR',
+  'Alpine': 'ALP',
+  'Williams': 'WIL',
+  'RB': 'RBF',
+  'Haas F1 Team': 'HAA',
+  'Kick Sauber': 'SAU',
+};
+
+function teamColor(team) {
+  for (const [k, v] of Object.entries(TEAM_COLORS)) {
+    if ((team || '').includes(k) || k.includes((team || ''))) return v;
+  }
+  return '#888';
+}
+
+function driverColor(d) {
+  return d?.team_colour ? '#' + d.team_colour : teamColor(d?.team_name);
+}
+
+// STATUS
+function setStatus(msg, type = '') {
+  const el = document.getElementById('status-text');
+  el.textContent = msg;
+  el.className = 'status-text ' + type;
+}
+
+function setLastUpdate() {
+  document.getElementById('last-update').textContent = 'Updated ' + new Date().toLocaleTimeString();
+}
+
+// FETCH wrapper
+async function apiFetch(endpoint, params = {}) {
+  const url = new URL(API + endpoint);
+  Object.entries(params).forEach(([k, v]) => {
+    if (Array.isArray(v)) v.forEach(vi => url.searchParams.append(k, vi));
+    else url.searchParams.set(k, v);
+  });
+  const resp = await fetch(url.toString());
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  return resp.json();
+}
+
+// LOAD SESSIONS for year
+async function loadSessions() {
+  const year = document.getElementById('sel-year').value;
+  setStatus('Loading sessions for ' + year + '...');
+  try {
+    const meetings = await apiFetch('/meetings', { year });
+    const sessions = await apiFetch('/sessions', { year });
+    state.sessions = sessions;
+    
+    const sel = document.getElementById('sel-session');
+    sel.innerHTML = '';
+    
+    // Group sessions by meeting
+    const byMeeting = {};
+    sessions.forEach(s => {
+      if (!byMeeting[s.meeting_key]) byMeeting[s.meeting_key] = { name: s.meeting_name || s.location, sessions: [] };
+      byMeeting[s.meeting_key].sessions.push(s);
+    });
+    
+    Object.values(byMeeting).reverse().forEach(m => {
+      const grp = document.createElement('optgroup');
+      grp.label = m.name;
+      m.sessions.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.session_key;
+        opt.textContent = s.session_name + (s.date_start ? ' (' + s.date_start.slice(0, 10) + ')' : '');
+        opt.dataset.meeting = s.meeting_key;
+        grp.appendChild(opt);
+      });
+      sel.appendChild(grp);
+    });
+    
+    setStatus('Ready. ' + sessions.length + ' sessions found for ' + year);
+  } catch (e) {
+    setStatus('Error loading sessions: ' + e.message, 'error');
+  }
+}
+
+document.getElementById('sel-year').addEventListener('change', loadSessions);
+
+// LOAD SESSION
+async function loadSession() {
+  const sel = document.getElementById('sel-session');
+  const opt = sel.selectedOptions[0];
+  if (!opt || !opt.value) { setStatus('Please select a session', 'error'); return; }
+  
+  state.sessionKey = parseInt(opt.value);
+  state.meetingKey = parseInt(opt.dataset.meeting);
+  
+  setStatus('Loading session data...', '');
+  
+  // Clear auto refresh
+  if (state.autoRefresh) clearInterval(state.autoRefresh);
+  
+  await fetchAll();
+  
+  // Auto-refresh every 15s
+  let countdown = 15;
+  state.autoRefresh = setInterval(() => {
+    countdown--;
+    document.getElementById('auto-timer').textContent = 'AUTO-REFRESH IN ' + countdown + 's';
+    if (countdown <= 0) {
+      countdown = 15;
+      fetchAll(true);
+    }
+  }, 1000);
+}
+
+async function refreshData() {
+  if (!state.sessionKey) { setStatus('Load a session first', 'error'); return; }
+  const btn = document.getElementById('refresh-btn');
+  btn.classList.add('spinning');
+  await fetchAll(true);
+  btn.classList.remove('spinning');
+}
+
+async function fetchAll(silent = false) {
+  if (!state.sessionKey) return;
+  if (!silent) setStatus('Fetching session data...');
+  
+  try {
+    const [drivers, positions, carData, laps, pits, weather, rc] = await Promise.allSettled([
+      apiFetch('/drivers', { session_key: state.sessionKey }),
+      apiFetch('/position', { session_key: state.sessionKey }),
+      apiFetch('/car_data', { session_key: state.sessionKey }),
+      apiFetch('/laps', { session_key: state.sessionKey }),
+      apiFetch('/pit', { session_key: state.sessionKey }),
+      apiFetch('/weather', { session_key: state.sessionKey }),
+      apiFetch('/race_control', { session_key: state.sessionKey }),
+    ]);
+
+    if (drivers.status === 'fulfilled') {
+      state.drivers = {};
+      drivers.value.forEach(d => { state.drivers[d.driver_number] = d; });
+    }
+    if (positions.status === 'fulfilled') state.positions = positions.value;
+    if (carData.status === 'fulfilled') state.carData = processCarData(carData.value);
+    if (laps.status === 'fulfilled') state.laps = laps.value;
+    if (pits.status === 'fulfilled') state.pits = pits.value;
+    if (weather.status === 'fulfilled') state.weather = weather.value;
+    if (rc.status === 'fulfilled') state.raceControl = rc.value;
+
+    // Try standings
+    try {
+      const [dStandings, tStandings] = await Promise.allSettled([
+        apiFetch('/championship_drivers', { session_key: state.sessionKey }),
+        apiFetch('/championship_teams', { session_key: state.sessionKey }),
+      ]);
+      if (dStandings.status === 'fulfilled') state.driverStandings = dStandings.value;
+      if (tStandings.status === 'fulfilled') state.teamStandings = tStandings.value;
+    } catch {}
+
+    // Populate lap driver select
+    populateLapDriverSelect();
+    
+    renderCurrentTab();
+    setLastUpdate();
+    setStatus('Session data loaded successfully', 'ok');
+    
+    document.getElementById('live-badge').style.display = 'flex';
+
+  } catch (e) {
+    setStatus('Error: ' + e.message, 'error');
+  }
+}
+
+function processCarData(data) {
+  // Get latest data point per driver
+  const latest = {};
+  data.forEach(d => {
+    if (!latest[d.driver_number] || d.date > latest[d.driver_number].date) {
+      latest[d.driver_number] = d;
+    }
+  });
+  return latest;
+}
+
+function getLatestPositions() {
+  const latest = {};
+  state.positions.forEach(p => {
+    if (!latest[p.driver_number] || p.date > latest[p.driver_number].date) {
+      latest[p.driver_number] = p;
+    }
+  });
+  return Object.values(latest).sort((a, b) => a.position - b.position);
+}
+
+// TABS
+function showTab(tab) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  event.target.classList.add('active');
+  state.currentTab = tab;
+  renderCurrentTab();
+}
+
+function renderCurrentTab() {
+  switch (state.currentTab) {
+    case 'timing': renderTiming(); break;
+    case 'track': renderTrack(); break;
+    case 'telemetry': renderTelemetry(); break;
+    case 'standings': renderStandings(); break;
+    case 'laps': renderLaps(); break;
+    case 'pitstops': renderPits(); break;
+    case 'weather': renderWeather(); break;
+    case 'racecontrol': renderRaceControl(); break;
+  }
+}
+
+// TIMING TOWER
+function renderTiming() {
+  const positions = getLatestPositions();
+  if (!positions.length) return;
+
+  // Get best laps per driver
+  const bestLaps = {};
+  state.laps.forEach(l => {
+    if (l.lap_duration && (!bestLaps[l.driver_number] || l.lap_duration < bestLaps[l.driver_number])) {
+      bestLaps[l.driver_number] = l.lap_duration;
+    }
+  });
+  const overallBest = Math.min(...Object.values(bestLaps).filter(Boolean));
+
+  // Get current lap per driver
+  const currentLaps = {};
+  state.laps.forEach(l => {
+    if (!currentLaps[l.driver_number] || l.lap_number > currentLaps[l.driver_number].lap_number) {
+      currentLaps[l.driver_number] = l;
+    }
+  });
+
+  // Get stints for tyre
+  const tyreLookup = {};
+  state.pits.forEach(p => { tyreLookup[p.driver_number] = p; });
+
+  const leaderBest = bestLaps[positions[0]?.driver_number];
+
+  let html = `<table class="timing-table">
+    <thead><tr>
+      <th>POS</th><th>DRIVER</th><th>GAP</th><th>BEST LAP</th><th>LAST LAP</th><th>TYRES</th><th>LAP</th><th>DRS</th>
+    </tr></thead><tbody>`;
+
+  positions.forEach((p, i) => {
+    const d = state.drivers[p.driver_number] || {};
+    const car = state.carData[p.driver_number] || {};
+    const lapD = currentLaps[p.driver_number] || {};
+    const best = bestLaps[p.driver_number];
+    const isFastest = best && best === overallBest;
+    const pos = p.position;
+    const posClass = pos === 1 ? 'p1' : pos === 2 ? 'p2' : pos === 3 ? 'p3' : '';
+    const color = driverColor(d);
+    
+    const gapText = i === 0 ? 'LEADER' : (leaderBest && best ? '+' + (best - leaderBest).toFixed(3) + 's' : '—');
+    
+    const lastLap = lapD.lap_duration ? formatTime(lapD.lap_duration) : '—';
+    const bestLapStr = best ? formatTime(best) : '—';
+    
+    const drs = car.drs;
+    const drsOn = drs >= 10 && drs <= 14;
+    
+    html += `<tr class="${pos === 1 ? 'leader' : ''}">
+      <td><span class="pos-num ${posClass}">${pos}</span></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="driver-num" style="background:${color}22;color:${color};border:1px solid ${color}44;">
+            ${p.driver_number}
+          </span>
+          <span class="driver-name">${d.last_name || d.full_name || 'DRV ' + p.driver_number}</span>
+          <span class="driver-abbr" style="color:${color};">${d.name_acronym || ''}</span>
+        </div>
+      </td>
+      <td class="gap-text">${gapText}</td>
+      <td class="${isFastest ? 's-purple' : 'gap-text'}">${bestLapStr}${isFastest ? ' ◆' : ''}</td>
+      <td class="gap-text">${lastLap}</td>
+      <td>${getTyreDisplay(p.driver_number)}</td>
+      <td class="gap-text">${lapD.lap_number || '—'}</td>
+      <td>${drsOn ? '<span class="drs-on">DRS</span>' : '<span class="drs-off">—</span>'}</td>
+    </tr>`;
+  });
+
+  html += '</tbody></table>';
+  
+  document.getElementById('timing-content').innerHTML = html;
+  document.getElementById('timing-badge').textContent = positions.length + ' CARS';
+}
+
+function getTyreDisplay(driverNum) {
+  // Get most recent pit stop for tyre compound
+  const driverPits = state.pits.filter(p => p.driver_number === driverNum).sort((a, b) => b.lap_number - a.lap_number);
+  const compound = driverPits[0]?.tyre_compound || null;
+  if (!compound) return '<span class="tyre tyre-unknown">?</span>';
+  const cls = compound ? 'tyre-' + compound.toLowerCase() : 'tyre-unknown';
+  const abbr = compound ? compound[0] : '?';
+  return `<span class="tyre ${cls}">${abbr}</span>`;
+}
+
+function formatTime(sec) {
+  if (!sec) return '—';
+  const m = Math.floor(sec / 60);
+  const s = (sec % 60).toFixed(3);
+  const sp = s < 10 ? '0' + s : s;
+  return m > 0 ? `${m}:${sp}` : sp;
+}
+
+// TRACK MAP
+function renderTrack() {
+  const positions = getLatestPositions();
+  if (!positions.length) return;
+
+  // Check if we have x/y coordinates
+  const hasCoords = state.positions.some(p => p.x !== undefined && p.y !== undefined && (p.x !== 0 || p.y !== 0));
+
+  if (!hasCoords) {
+    // Fallback: show position grid if no coords
+    renderTrackGrid(positions);
+    return;
+  }
+
+  const canvas = document.getElementById('track-canvas');
+  const empty = document.getElementById('track-empty');
+  empty.style.display = 'none';
+  canvas.style.display = 'block';
+
+  // Get latest positions with coords
+  const latestWithCoords = {};
+  state.positions.forEach(p => {
+    if (p.x !== undefined && (p.x !== 0 || p.y !== 0)) {
+      if (!latestWithCoords[p.driver_number] || p.date > latestWithCoords[p.driver_number].date) {
+        latestWithCoords[p.driver_number] = p;
+      }
+    }
+  });
+
+  // Get all track points to draw the circuit
+  const allX = state.positions.filter(p => p.x).map(p => p.x);
+  const allY = state.positions.filter(p => p.y).map(p => p.y);
+
+  const minX = Math.min(...allX), maxX = Math.max(...allX);
+  const minY = Math.min(...allY), maxY = Math.max(...allY);
+
+  const container = document.getElementById('track-canvas-container');
+  const W = container.clientWidth;
+  const H = Math.min(400, W * 0.55);
+  canvas.width = W;
+  canvas.height = H;
+
+  const pad = 40;
+  const scaleX = (W - pad * 2) / (maxX - minX || 1);
+  const scaleY = (H - pad * 2) / (maxY - minY || 1);
+  const scale = Math.min(scaleX, scaleY);
+
+  const offX = pad + ((W - pad * 2) - (maxX - minX) * scale) / 2;
+  const offY = pad + ((H - pad * 2) - (maxY - minY) * scale) / 2;
+
+  const tx = x => offX + (x - minX) * scale;
+  const ty = y => offY + (y - minY) * scale;
+
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+
+  // Draw track outline from all historical positions
+  const trackPoints = state.positions.filter(p => p.x && p.y);
+  if (trackPoints.length > 1) {
+    // Sort by date to draw track properly
+    const sorted = [...trackPoints].sort((a, b) => a.date > b.date ? 1 : -1);
+    
+    // Draw track shadow
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 18;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    sorted.forEach((p, i) => {
+      if (i === 0) ctx.moveTo(tx(p.x), ty(p.y));
+      else ctx.lineTo(tx(p.x), ty(p.y));
+    });
+    ctx.stroke();
+
+    // Draw track surface
+    ctx.beginPath();
+    ctx.strokeStyle = '#1a2535';
+    ctx.lineWidth = 14;
+    sorted.forEach((p, i) => {
+      if (i === 0) ctx.moveTo(tx(p.x), ty(p.y));
+      else ctx.lineTo(tx(p.x), ty(p.y));
+    });
+    ctx.stroke();
+
+    // Draw center line
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([6, 6]);
+    sorted.forEach((p, i) => {
+      if (i === 0) ctx.moveTo(tx(p.x), ty(p.y));
+      else ctx.lineTo(tx(p.x), ty(p.y));
+    });
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Draw driver dots
+  const legendItems = [];
+  const latestPos = getLatestPositions();
+
+  Object.entries(latestWithCoords).forEach(([dnum, p]) => {
+    const d = state.drivers[dnum] || {};
+    const color = driverColor(d);
+    const pos = latestPos.find(lp => lp.driver_number == dnum)?.position;
+
+    const x = tx(p.x), y = ty(p.y);
+
+    // Glow
+    const grad = ctx.createRadialGradient(x, y, 0, x, y, 14);
+    grad.addColorStop(0, color + '66');
+    grad.addColorStop(1, 'transparent');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(x, y, 14, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Dot
+    ctx.beginPath();
+    ctx.arc(x, y, 7, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Label
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.font = 'bold 9px "Share Tech Mono"';
+    ctx.textAlign = 'center';
+    ctx.fillText(d.name_acronym || dnum, x, y - 12);
+
+    legendItems.push({ num: dnum, name: d.name_acronym || 'DRV' + dnum, color, pos });
+  });
+
+  // Legend
+  const legEl = document.getElementById('track-legend');
+  legEl.innerHTML = legendItems.sort((a, b) => (a.pos || 99) - (b.pos || 99)).slice(0, 20).map(l =>
+    `<div class="legend-item"><div class="legend-dot" style="background:${l.color}"></div>${l.name}</div>`
+  ).join('');
+
+  document.getElementById('track-badge').textContent = Object.keys(latestWithCoords).length + ' DRIVERS TRACKED';
+}
+
+function renderTrackGrid(positions) {
+  const empty = document.getElementById('track-empty');
+  empty.style.display = 'none';
+  const canvas = document.getElementById('track-canvas');
+  canvas.style.display = 'none';
+
+  // Show a grid layout
+  const container = document.getElementById('track-canvas-container');
+  const grid = document.createElement('div');
+  grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;padding:16px;width:100%;';
+
+  positions.forEach(p => {
+    const d = state.drivers[p.driver_number] || {};
+    const color = driverColor(d);
+    const box = document.createElement('div');
+    box.style.cssText = `background:${color}15;border:1px solid ${color}44;border-radius:6px;padding:10px;text-align:center;`;
+    box.innerHTML = `
+      <div style="font-family:'Orbitron',monospace;font-size:1.2rem;font-weight:900;color:${color};">${p.position || '?'}</div>
+      <div style="font-size:0.85rem;font-weight:700;color:#e8edf5;margin-top:4px;">${d.name_acronym || 'DRV'}</div>
+      <div style="font-size:0.7rem;color:#5a7090;">#${p.driver_number}</div>
+    `;
+    grid.appendChild(box);
+  });
+
+  container.innerHTML = '';
+  container.appendChild(grid);
+  document.getElementById('track-badge').textContent = 'GRID VIEW (no GPS)';
+}
+
+// TELEMETRY
+function renderTelemetry() {
+  const positions = getLatestPositions();
+  if (!positions.length) {
+    document.getElementById('telemetry-content').innerHTML = `<div class="empty-state"><div class="empty-icon">📊</div><div class="empty-title">NO DATA</div><div class="empty-sub">Load a session to view telemetry</div></div>`;
+    return;
+  }
+
+  let html = '<div class="telemetry-grid">';
+
+  positions.forEach(p => {
+    const d = state.drivers[p.driver_number] || {};
+    const car = state.carData[p.driver_number] || {};
+    const color = driverColor(d);
+    const pos = p.position;
+    const posClass = pos === 1 ? 'p1' : '';
+
+    const throttle = car.throttle || 0;
+    const brake = car.brake || 0;
+    const gear = car.n_gear || 0;
+    const rpm = car.rpm || 0;
+    const speed = car.speed || 0;
+    const drs = car.drs >= 10;
+
+    // Best lap
+    const driverLaps = state.laps.filter(l => l.driver_number === p.driver_number && l.lap_duration);
+    const bestLap = driverLaps.length ? Math.min(...driverLaps.map(l => l.lap_duration)) : null;
+    const lapCount = driverLaps.length;
+
+    html += `<div class="driver-card" onclick="this.classList.toggle('selected')">
+      <div class="driver-card-header" style="border-left: 3px solid ${color};">
+        <div>
+          <div class="driver-card-num" style="color:${color};">${p.driver_number}</div>
+        </div>
+        <div class="driver-card-info">
+          <div class="driver-card-name">${d.last_name || d.full_name || 'Driver ' + p.driver_number}</div>
+          <div class="driver-card-team" style="color:${color}88;">${d.team_name || '—'}</div>
+        </div>
+        <div class="driver-card-pos ${posClass}">P${pos}</div>
+      </div>
+      <div class="telem-bars">
+        <div class="telem-row">
+          <div class="telem-label"><span>THROTTLE</span><span class="telem-val">${throttle}%</span></div>
+          <div class="bar-track"><div class="bar-fill bar-throttle" style="width:${throttle}%"></div></div>
+        </div>
+        <div class="telem-row">
+          <div class="telem-label"><span>BRAKE</span><span class="telem-val">${brake}%</span></div>
+          <div class="bar-track"><div class="bar-fill bar-brake" style="width:${brake}%"></div></div>
+        </div>
+        <div class="telem-row">
+          <div class="telem-label"><span>GEAR</span><span class="telem-val">${gear}/8</span></div>
+          <div class="bar-track"><div class="bar-fill bar-gear" style="width:${(gear / 8) * 100}%"></div></div>
+        </div>
+        <div class="telem-row">
+          <div class="telem-label"><span>RPM</span><span class="telem-val">${rpm.toLocaleString()}</span></div>
+          <div class="bar-track"><div class="bar-fill bar-rpm" style="width:${Math.min((rpm / 15000) * 100, 100)}%"></div></div>
+        </div>
+      </div>
+      <div class="telem-stats">
+        <div class="stat-box">
+          <div class="stat-val">${speed} <span style="font-size:0.55rem;color:var(--text-dim)">km/h</span></div>
+          <div class="stat-lbl">SPEED</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val">${bestLap ? formatTime(bestLap) : '—'}</div>
+          <div class="stat-lbl">BEST LAP</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val ${drs ? 's-green' : ''}">${drs ? 'ON' : 'OFF'}</div>
+          <div class="stat-lbl">DRS</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val">${lapCount}</div>
+          <div class="stat-lbl">LAPS</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val">${d.name_acronym || '—'}</div>
+          <div class="stat-lbl">CODE</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val">${state.pits.filter(pit => pit.driver_number === p.driver_number).length}</div>
+          <div class="stat-lbl">PIT STOPS</div>
+        </div>
+      </div>
+    </div>`;
+  });
+
+  html += '</div>';
+  document.getElementById('telemetry-content').innerHTML = html;
+}
+
+// STANDINGS
+function renderStandings() {
+  if (state.driverStandings.length) {
+    const maxPts = Math.max(...state.driverStandings.map(d => d.points || 0));
+    let html = state.driverStandings.sort((a, b) => (a.position || 99) - (b.position || 99)).map(s => {
+      const d = state.drivers[s.driver_number] || {};
+      const color = driverColor(d);
+      const pos = s.position;
+      const posClass = pos === 1 ? 'p1' : pos === 2 ? 'p2' : pos === 3 ? 'p3' : '';
+      return `<div class="standings-row">
+        <span class="pos-num ${posClass}" style="min-width:30px;">${pos}</span>
+        <span class="driver-num" style="background:${color}22;color:${color};border:1px solid ${color}44;padding:2px 7px;border-radius:3px;font-size:0.78rem;font-family:'Orbitron',monospace;font-weight:700;">${d.name_acronym || 'DRV'}</span>
+        <span class="driver-name" style="flex:1;">${d.last_name || d.full_name || 'Driver ' + s.driver_number}</span>
+        <div class="points-bar-track"><div class="points-bar-fill" style="width:${maxPts ? (s.points / maxPts) * 100 : 0}%"></div></div>
+        <span class="points-val">${s.points}</span>
+      </div>`;
+    }).join('');
+    document.getElementById('driver-standings-content').innerHTML = html;
+  }
+
+  if (state.teamStandings.length) {
+    const maxPts = Math.max(...state.teamStandings.map(t => t.points || 0));
+    let html = state.teamStandings.sort((a, b) => (a.position || 99) - (b.position || 99)).map(s => {
+      const color = teamColor(s.team_name);
+      const pos = s.position;
+      const posClass = pos === 1 ? 'p1' : pos === 2 ? 'p2' : pos === 3 ? 'p3' : '';
+      return `<div class="standings-row">
+        <span class="pos-num ${posClass}" style="min-width:30px;">${pos}</span>
+        <div style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0;"></div>
+        <span class="driver-name" style="flex:1;">${s.team_name || 'Team ' + s.team_key}</span>
+        <div class="points-bar-track"><div class="points-bar-fill" style="width:${maxPts ? (s.points / maxPts) * 100 : 0}%;background:linear-gradient(90deg,${color},${color}88);"></div></div>
+        <span class="points-val">${s.points}</span>
+      </div>`;
+    }).join('');
+    document.getElementById('team-standings-content').innerHTML = html;
+  }
+
+  if (!state.driverStandings.length && !state.teamStandings.length) {
+    const msg = '<div class="empty-state" style="padding:30px;"><div class="empty-icon">🏆</div><div class="empty-title">STANDINGS NOT AVAILABLE</div><div class="empty-sub">Championship standings are only available for race sessions</div></div>';
+    document.getElementById('driver-standings-content').innerHTML = msg;
+    document.getElementById('team-standings-content').innerHTML = msg;
+  }
+}
+
+// LAPS
+function populateLapDriverSelect() {
+  const sel = document.getElementById('lap-driver-sel');
+  const drivers = [...new Set(state.laps.map(l => l.driver_number))];
+  sel.innerHTML = '<option value="">All drivers</option>';
+  drivers.forEach(num => {
+    const d = state.drivers[num] || {};
+    const opt = document.createElement('option');
+    opt.value = num;
+    opt.textContent = (d.name_acronym || 'DRV') + ' #' + num;
+    sel.appendChild(opt);
+  });
+}
+
+function renderLaps() {
+  const filterDriver = document.getElementById('lap-driver-sel').value;
+  let laps = [...state.laps];
+  if (filterDriver) laps = laps.filter(l => l.driver_number == filterDriver);
+  laps = laps.sort((a, b) => {
+    if (a.driver_number !== b.driver_number) return a.driver_number - b.driver_number;
+    return a.lap_number - b.lap_number;
+  });
+
+  if (!laps.length) {
+    document.getElementById('laps-content').innerHTML = '<div class="empty-state"><div class="empty-icon">⏱</div><div class="empty-title">NO LAP DATA</div></div>';
+    return;
+  }
+
+  const fastest = Math.min(...laps.filter(l => l.lap_duration).map(l => l.lap_duration));
+
+  let html = `<table class="timing-table">
+    <thead><tr>
+      <th>DRIVER</th><th>LAP</th><th>LAP TIME</th><th>S1</th><th>S2</th><th>S3</th><th>TOP SPEED</th><th>PIT IN</th>
+    </tr></thead><tbody>`;
+
+  laps.forEach(l => {
+    const d = state.drivers[l.driver_number] || {};
+    const color = driverColor(d);
+    const isFastest = l.lap_duration && l.lap_duration === fastest;
+    html += `<tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0;"></span>
+          <span class="driver-abbr" style="color:${color};">${d.name_acronym || 'DRV'}</span>
+          <span style="color:var(--text-dim);font-size:0.7rem;">#${l.driver_number}</span>
+        </div>
+      </td>
+      <td class="gap-text">${l.lap_number}</td>
+      <td class="${isFastest ? 's-purple' : l.lap_duration ? '' : 'gap-text'}">${l.lap_duration ? formatTime(l.lap_duration) : '—'}${isFastest ? ' ◆' : ''}</td>
+      <td class="gap-text sector">${l.duration_sector_1 ? formatTime(l.duration_sector_1) : '—'}</td>
+      <td class="gap-text sector">${l.duration_sector_2 ? formatTime(l.duration_sector_2) : '—'}</td>
+      <td class="gap-text sector">${l.duration_sector_3 ? formatTime(l.duration_sector_3) : '—'}</td>
+      <td class="gap-text">${l.st_speed ? l.st_speed + ' km/h' : '—'}</td>
+      <td>${l.is_pit_out_lap ? '🔧' : '—'}</td>
+    </tr>`;
+  });
+
+  html += '</tbody></table>';
+  document.getElementById('laps-content').innerHTML = html;
+}
+
+// PIT STOPS
+function renderPits() {
+  if (!state.pits.length) {
+    document.getElementById('pitstops-content').innerHTML = '<div class="empty-state"><div class="empty-icon">🔧</div><div class="empty-title">NO PIT DATA</div></div>';
+    return;
+  }
+
+  const sorted = [...state.pits].sort((a, b) => a.lap_number - b.lap_number);
+
+  let html = `<table class="timing-table"><thead><tr>
+    <th>DRIVER</th><th>LAP</th><th>PIT DURATION</th><th>TYRE IN</th><th>TYRE OUT</th>
+  </tr></thead><tbody>`;
+
+  sorted.forEach(p => {
+    const d = state.drivers[p.driver_number] || {};
+    const color = driverColor(d);
+    const dur = p.pit_duration ? p.pit_duration.toFixed(1) + 's' : '—';
+    const tyreIn = p.tyre_compound ? `<span class="tyre tyre-${p.tyre_compound.toLowerCase()}">${p.tyre_compound[0]}</span>` : '—';
+    html += `<tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="width:8px;height:8px;border-radius:50%;background:${color};display:inline-block;flex-shrink:0;"></span>
+          <span class="driver-abbr" style="color:${color};">${d.name_acronym || 'DRV'}</span>
+          <span style="color:var(--text-dim);font-size:0.7rem;font-family:'Share Tech Mono';">${d.last_name || '#'+p.driver_number}</span>
+        </div>
+      </td>
+      <td class="pit-lap">L${p.lap_number || '?'}</td>
+      <td class="pit-dur">${dur}</td>
+      <td>${tyreIn}</td>
+      <td>—</td>
+    </tr>`;
+  });
+
+  html += '</tbody></table>';
+  document.getElementById('pitstops-content').innerHTML = html;
+}
+
+// WEATHER
+function renderWeather() {
+  const w = state.weather[state.weather.length - 1];
+  if (!w) {
+    document.getElementById('weather-content').innerHTML = '<div class="empty-state"><div class="empty-icon">🌤</div><div class="empty-title">NO WEATHER DATA</div></div>';
+    return;
+  }
+
+  const boxes = [
+    { icon: '🌡', label: 'AIR TEMP', val: (w.air_temperature || '—') + '°C', color: '#ff8060' },
+    { icon: '🏎', label: 'TRACK TEMP', val: (w.track_temperature || '—') + '°C', color: '#ff4d1c' },
+    { icon: '💨', label: 'WIND SPEED', val: (w.wind_speed || '—') + ' m/s', color: '#00d4ff' },
+    { icon: '🧭', label: 'WIND DIR', val: (w.wind_direction || '—') + '°', color: '#8aabb0' },
+    { icon: '💧', label: 'HUMIDITY', val: (w.humidity || '—') + '%', color: '#00d4ff' },
+    { icon: '🌧', label: 'RAINFALL', val: w.rainfall ? 'YES' : 'NO', color: w.rainfall ? '#00d4ff' : '#5a7090' },
+    { icon: '📊', label: 'PRESSURE', val: (w.pressure || '—') + ' mbar', color: '#c77dff' },
+  ];
+
+  const timeStr = w.date ? new Date(w.date).toLocaleTimeString() : '';
+
+  let html = `<div style="padding:12px 16px;font-size:0.75rem;color:var(--text-dim);font-family:'Share Tech Mono';letter-spacing:0.08em;">LAST READING: ${timeStr}</div>`;
+  html += '<div class="weather-grid">';
+  boxes.forEach(b => {
+    html += `<div class="weather-box">
+      <div class="weather-icon">${b.icon}</div>
+      <div class="weather-label">${b.label}</div>
+      <div class="weather-value" style="color:${b.color};">${b.val}</div>
+    </div>`;
+  });
+  html += '</div>';
+
+  // Historical weather chart summary
+  if (state.weather.length > 1) {
+    html += `<div style="padding:10px 16px;font-size:0.75rem;color:var(--text-dim);">Based on ${state.weather.length} readings this session.</div>`;
+  }
+
+  document.getElementById('weather-content').innerHTML = html;
+}
+
+// RACE CONTROL
+function renderRaceControl() {
+  if (!state.raceControl.length) {
+    document.getElementById('racecontrol-content').innerHTML = '<div class="empty-state"><div class="empty-icon">📻</div><div class="empty-title">NO MESSAGES</div></div>';
+    return;
+  }
+
+  const sorted = [...state.raceControl].sort((a, b) => b.date > a.date ? 1 : -1);
+
+  const html = sorted.map(rc => {
+    const cat = (rc.category || 'Info').toLowerCase();
+    const catClass = cat.includes('flag') ? 'flag' : cat.includes('incident') ? 'incident' : 'info';
+    const time = rc.date ? new Date(rc.date).toLocaleTimeString() : '';
+    const flagEmoji = rc.flag ? ({
+      'GREEN': '🟢', 'YELLOW': '🟡', 'RED': '🔴', 'SAFETY CAR': '🚗',
+      'VIRTUAL SAFETY CAR': '🟡', 'CHEQUERED': '🏁', 'BLUE': '🔵',
+    }[rc.flag] || '🚩') : '';
+    return `<div class="rc-item">
+      <div class="rc-time">${time}</div>
+      <div style="flex:1;">
+        <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px;">
+          <span class="rc-cat ${catClass}">${rc.category || 'INFO'}</span>
+          ${flagEmoji ? `<span style="font-size:1rem;">${flagEmoji}</span>` : ''}
+          ${rc.flag ? `<span style="font-size:0.7rem;color:var(--text-dim);">${rc.flag}</span>` : ''}
+        </div>
+        <div class="rc-msg">${rc.message || '—'}</div>
+        ${rc.driver_number ? `<div style="font-size:0.72rem;color:var(--text-dim);margin-top:3px;">Driver #${rc.driver_number} ${rc.lap_number ? '• Lap ' + rc.lap_number : ''}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('racecontrol-content').innerHTML = html;
+}
+
+// INIT: load current year sessions
+window.addEventListener('load', () => {
+  loadSessions();
+});
+</script>
+</body>
+</html>
