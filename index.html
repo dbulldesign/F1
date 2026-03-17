@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>F1 LIVE</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
@@ -324,6 +325,40 @@ select.ctrl option{background:#0c1422;}
   #tl-time{display:none;}
   #tl-speed{padding:2px 5px;font-size:.44rem;}
   #tl-lap{font-size:.66rem;min-width:40px;}
+}
+
+/* ══ iOS ENHANCEMENTS ══ */
+/* Prevent full-page rubber-band bounce */
+html{overscroll-behavior:none;}
+/* Contain scroll bounce within each scroll container */
+#mob-ws{overscroll-behavior:contain;}
+#mob-nav{overscroll-behavior-x:contain;}
+
+/* Prevent iOS from zooming the viewport when tapping select/input
+   (Safari zooms when focused element font-size < 16px) */
+@supports(-webkit-touch-callout:none){
+  select.ctrl,select.drv-sel,.chart-sel,.t-mode-sel,.win-sel{font-size:16px;}
+}
+
+/* Eliminate tap delay and suppress long-press callout on interactive elements */
+.btn,.m-tab,.tile-btn,.tz-btn,.tl-btn,.wc-btn,.tl-speed,.picker-item,.picker-cancel,.kbd-close{
+  touch-action:manipulation;
+  -webkit-touch-callout:none;
+  -webkit-user-select:none;
+  user-select:none;
+}
+
+/* Active/tap feedback (iOS doesn't fire :hover on first tap) */
+.btn:active{border-color:var(--cyan);color:var(--cyan);}
+.btn.go:active{background:#ff2020;box-shadow:0 0 12px rgba(232,0,31,.4);}
+.btn.icon:active{border-color:var(--gold);color:var(--gold);}
+.m-tab:active{opacity:.6;}
+.tile-btn:active,.tz-btn:active,.tl-btn:active{border-color:var(--cyan);color:var(--cyan);}
+.picker-item:active{border-color:rgba(0,207,255,.4);background:rgba(0,207,255,.06);}
+
+/* Ensure minimum 44pt tap targets on mobile nav tabs */
+@media(max-width:767px){
+  .m-tab{min-height:48px;}
 }
 </style>
 </head>
