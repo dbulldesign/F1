@@ -338,7 +338,7 @@ select.ctrl option{background:#0c1422;}
     <!-- Mobile session controls -->
     <div class="mob-only" style="display:flex;align-items:center;gap:4px;flex:1;min-width:0;">
       <select class="ctrl" id="m-yr" style="width:60px;" onchange="loadSessions()">
-        <option>2025</option><option>2024</option><option>2023</option><option>2022</option>
+        <option>2026</option><option>2025</option><option>2024</option><option>2023</option><option>2022</option>
       </select>
       <select class="ctrl" id="m-sess" style="flex:1;min-width:0;font-size:.72rem;"><option value="">Session…</option></select>
       <button class="btn go" onclick="loadSession()">GO</button>
@@ -348,7 +348,7 @@ select.ctrl option{background:#0c1422;}
     <div class="desk-only" style="align-items:center;gap:7px;">
       <span class="lbl">YEAR</span>
       <select class="ctrl" id="d-yr" style="width:68px;" onchange="loadSessions()">
-        <option>2025</option><option>2024</option><option>2023</option><option>2022</option>
+        <option>2026</option><option>2025</option><option>2024</option><option>2023</option><option>2022</option>
       </select>
       <span class="lbl">SESSION</span>
       <select class="ctrl" id="d-sess" style="max-width:200px;"><option value="">Load year…</option></select>
@@ -521,7 +521,9 @@ const PANELS=[
 const TCOLORS={
   'Red Bull Racing':'#3671C6','Ferrari':'#E8001F','Mercedes':'#27F4D2',
   'McLaren':'#FF8000','Aston Martin':'#358C75','Alpine':'#FF87BC',
-  'Williams':'#64C4FF','RB':'#6692FF','Haas F1 Team':'#B6BABD','Kick Sauber':'#52E252'
+  'Williams':'#64C4FF','RB':'#6692FF','Racing Bulls':'#6692FF',
+  'Haas F1 Team':'#B6BABD','Kick Sauber':'#52E252','Audi':'#BB0A21',
+  'Cadillac':'#C0A060'
 };
 const SPEEDS=[1,2,4,8];
 
